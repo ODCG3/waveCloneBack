@@ -1,0 +1,220 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model cadeaux {
+  id              Int             @id @default(autoincrement())
+  users_id        Int?
+  montant_cadeaux Decimal?        @db.Decimal(10, 2)
+  status          String?         @default("Pending") @db.VarChar(20)
+  users           users?          @relation(fields: [users_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users_cadeaux   users_cadeaux[]
+}
+
+model cagnotte {
+  id               Int              @id @default(autoincrement())
+  users_id         Int?
+  montant          Decimal?         @db.Decimal(10, 2)
+  montant_objectif Decimal?         @db.Decimal(10, 2)
+  users            users?           @relation(fields: [users_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users_cagnotte   users_cagnotte[]
+}
+
+model code_promo {
+  id         Int       @id @default(autoincrement())
+  libelle    String?   @db.VarChar(50)
+  taux       Decimal?  @db.Decimal(5, 2)
+  deleted_at DateTime? @db.Timestamp(6)
+}
+
+model demandes_remboursement {
+  id             Int              @id @default(autoincrement())
+  users_id       Int?
+  montant        Decimal          @db.Decimal(10, 2)
+  motif          String?
+  status         String?          @default("Pending") @db.VarChar(20)
+  deleted_at     DateTime?        @db.Timestamp(6)
+  users          users?           @relation(fields: [users_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users_demandes users_demandes[]
+}
+
+model invitation {
+  id       Int     @id @default(autoincrement())
+  users_id Int?
+  message  String?
+  users    users?  @relation(fields: [users_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model issues {
+  id           Int            @id @default(autoincrement())
+  users_id     Int?
+  message      String?
+  users        users?         @relation(fields: [users_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users_issues users_issues[]
+}
+
+model notification {
+  id                 Int                  @id @default(autoincrement())
+  users_id           Int?
+  message            String?
+  etat               Boolean?
+  users              users?               @relation(fields: [users_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users_notification users_notification[]
+}
+
+model poche {
+  id          Int           @id @default(autoincrement())
+  users_id    Int?
+  montant     Decimal?      @db.Decimal(10, 2)
+  type        String?       @db.VarChar(50)
+  date_limite DateTime?     @db.Date
+  users       users?        @relation(fields: [users_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users_poche users_poche[]
+}
+
+model promo {
+  id          Int           @id @default(autoincrement())
+  titre       String?       @db.VarChar(100)
+  contenu     String?
+  description String?
+  users_promo users_promo[]
+}
+
+model role {
+  id      Int      @id @default(autoincrement())
+  libelle String?  @db.VarChar(50)
+  plafond Decimal? @db.Decimal(10, 2)
+  users   users[]
+}
+
+model transaction {
+  id                                    Int                 @id @default(autoincrement())
+  montant                               Decimal             @db.Decimal(10, 2)
+  destinataire                          Int?
+  agent                                 Int?
+  exp                                   Int?
+  type_id                               Int?
+  users_transaction_agentTousers        users?              @relation("transaction_agentTousers", fields: [agent], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users_transaction_destinataireTousers users?              @relation("transaction_destinataireTousers", fields: [destinataire], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users_transaction_expTousers          users?              @relation("transaction_expTousers", fields: [exp], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  type                                  type?               @relation(fields: [type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users_transaction                     users_transaction[]
+}
+
+model type {
+  id          Int           @id @default(autoincrement())
+  libelle     String        @db.VarChar(50)
+  transaction transaction[]
+}
+
+model users {
+  id                                          Int                      @id @default(autoincrement())
+  nom                                         String?                  @db.VarChar(50)
+  prenom                                      String?                  @db.VarChar(50)
+  telephone                                   String                   @unique @db.VarChar(20)
+  email                                       String                   @unique @db.VarChar(100)
+  solde                                       Decimal?                 @db.Decimal(10, 2)
+  code                                        String?                  @db.VarChar(50)
+  promo                                       Decimal?                 @db.Decimal(5, 2)
+  carte                                       String?                  @db.VarChar(50)
+  etatcarte                                   Boolean?
+  role_id                                     Int?
+  cadeaux                                     cadeaux[]
+  cagnotte                                    cagnotte[]
+  demandes_remboursement                      demandes_remboursement[]
+  invitation                                  invitation[]
+  issues                                      issues[]
+  notification                                notification[]
+  poche                                       poche[]
+  transaction_transaction_agentTousers        transaction[]            @relation("transaction_agentTousers")
+  transaction_transaction_destinataireTousers transaction[]            @relation("transaction_destinataireTousers")
+  transaction_transaction_expTousers          transaction[]            @relation("transaction_expTousers")
+  role                                        role?                    @relation(fields: [role_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users_cadeaux                               users_cadeaux[]
+  users_cagnotte                              users_cagnotte[]
+  users_demandes                              users_demandes[]
+  users_issues                                users_issues[]
+  users_notification                          users_notification[]
+  users_poche                                 users_poche[]
+  users_promo                                 users_promo[]
+  users_transaction                           users_transaction[]
+}
+
+model users_cadeaux {
+  users_id  Int
+  cadeau_id Int
+  role      String? @db.VarChar(50)
+  cadeaux   cadeaux @relation(fields: [cadeau_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users     users   @relation(fields: [users_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([users_id, cadeau_id])
+}
+
+model users_cagnotte {
+  users_id    Int
+  cagnotte_id Int
+  cagnotte    cagnotte @relation(fields: [cagnotte_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users       users    @relation(fields: [users_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([users_id, cagnotte_id])
+}
+
+model users_demandes {
+  users_id               Int
+  demande_id             Int
+  demandes_remboursement demandes_remboursement @relation(fields: [demande_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users                  users                  @relation(fields: [users_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([users_id, demande_id])
+}
+
+model users_issues {
+  users_id Int
+  issue_id Int
+  issues   issues @relation(fields: [issue_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users    users  @relation(fields: [users_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([users_id, issue_id])
+}
+
+model users_notification {
+  users_id        Int
+  notification_id Int
+  notification    notification @relation(fields: [notification_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users           users        @relation(fields: [users_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([users_id, notification_id])
+}
+
+model users_poche {
+  users_id Int
+  poche_id Int
+  poche    poche @relation(fields: [poche_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users    users @relation(fields: [users_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([users_id, poche_id])
+}
+
+model users_promo {
+  users_id Int
+  promo_id Int
+  promo    promo @relation(fields: [promo_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users    users @relation(fields: [users_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([users_id, promo_id])
+}
+
+model users_transaction {
+  users_id       Int
+  transaction_id Int
+  role           String?     @db.VarChar(50)
+  transaction    transaction @relation(fields: [transaction_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users          users       @relation(fields: [users_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([users_id, transaction_id])
+}

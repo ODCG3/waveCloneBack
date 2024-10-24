@@ -13,3 +13,8 @@
 //   });
 // });
 
+import postgres from 'postgres'
+
+const sql = postgres(process.env.db_url) // will use psql environment variables
+
+export default sql;
