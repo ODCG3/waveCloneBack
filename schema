@@ -1,0 +1,164 @@
+CREATE TABLE role (
+    id SERIAL PRIMARY KEY,
+    libelle VARCHAR(50),
+    plafond DECIMAL(10, 2)
+);
+
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    nom VARCHAR(50),
+    prenom VARCHAR(50),
+    telephone VARCHAR(20) UNIQUE NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    solde DECIMAL(10, 2),
+    code VARCHAR(50),
+    promo DECIMAL(5, 2),
+    carte VARCHAR(50),
+    etatCarte BOOLEAN,
+    role_id INT REFERENCES role(id)
+);
+
+CREATE TABLE type (
+    id SERIAL PRIMARY KEY,
+    libelle VARCHAR(50) NOT NULL
+);
+
+CREATE TABLE transaction (
+    id SERIAL PRIMARY KEY,
+    montant DECIMAL(10, 2) NOT NULL,
+    destinataire INT REFERENCES users(id),
+    agent INT REFERENCES users(id),
+    exp INT REFERENCES users(id),
+    type_id INT REFERENCES type(id)
+);
+
+CREATE TABLE notification (
+    id SERIAL PRIMARY KEY,
+    users_id INT REFERENCES users(id),
+    message TEXT,
+    etat BOOLEAN
+);
+
+
+CREATE TABLE demandes_remboursement (
+    id SERIAL PRIMARY KEY,
+    users_id INT REFERENCES users(id),
+    montant DECIMAL(10, 2) NOT NULL,
+    motif TEXT,
+    status VARCHAR(20) DEFAULT 'Pending',
+    deleted_at TIMESTAMP NULL -- for soft delete
+);
+
+
+CREATE TABLE promo (
+    id SERIAL PRIMARY KEY,
+    titre VARCHAR(100),
+    contenu TEXT,
+    description TEXT
+);
+
+
+CREATE TABLE code_promo (
+    id SERIAL PRIMARY KEY,
+    libelle VARCHAR(50),
+    taux DECIMAL(5, 2),
+    deleted_at TIMESTAMP NULL -- for soft delete
+);
+
+
+CREATE TABLE invitation (
+    id SERIAL PRIMARY KEY,
+    users_id INT REFERENCES users(id),
+    message TEXT
+);
+
+
+CREATE TABLE issues (
+    id SERIAL PRIMARY KEY,
+    users_id INT REFERENCES users(id),
+    message TEXT
+);
+
+
+CREATE TABLE poche (
+    id SERIAL PRIMARY KEY,
+    users_id INT REFERENCES users(id),
+    montant DECIMAL(10, 2),
+    type VARCHAR(50),
+    date_limite DATE
+);
+
+
+CREATE TABLE cagnotte (
+    id SERIAL PRIMARY KEY,
+    users_id INT REFERENCES users(id),
+    montant DECIMAL(10, 2),
+    montant_objectif DECIMAL(10, 2)
+);
+
+
+CREATE TABLE cadeaux (
+    id SERIAL PRIMARY KEY,
+    users_id INT REFERENCES users(id),
+    montant_cadeaux DECIMAL(10, 2),
+    status VARCHAR(20) DEFAULT 'Pending'
+);
+
+
+CREATE TABLE users_transaction (
+    users_id INT REFERENCES users(id),
+    transaction_id INT REFERENCES transaction(id),
+    role VARCHAR(50),  -- Can be 'sender', 'receiver', 'agent'
+    PRIMARY KEY (users_id, transaction_id)
+);
+
+
+CREATE TABLE users_promo (
+    users_id INT REFERENCES users(id),
+    promo_id INT REFERENCES promo(id),
+    PRIMARY KEY (users_id, promo_id)
+);
+
+
+CREATE TABLE users_cadeaux (
+    users_id INT REFERENCES users(id),
+    cadeau_id INT REFERENCES cadeaux(id),
+    role VARCHAR(50),  -- Role can be 'sender' or 'receiver'
+    PRIMARY KEY (users_id, cadeau_id)
+);
+
+
+CREATE TABLE users_notification (
+    users_id INT REFERENCES users(id),
+    notification_id INT REFERENCES notification(id),
+    PRIMARY KEY (users_id, notification_id)
+);
+
+
+CREATE TABLE users_issues (
+    users_id INT REFERENCES users(id),
+    issue_id INT REFERENCES issues(id),
+    PRIMARY KEY (users_id, issue_id)
+);
+
+
+CREATE TABLE users_demandes (
+    users_id INT REFERENCES users(id),
+    demande_id INT REFERENCES demandes_remboursement(id),
+    PRIMARY KEY (users_id, demande_id)
+);
+
+
+CREATE TABLE users_cagnotte (
+    users_id INT REFERENCES users(id),
+    cagnotte_id INT REFERENCES cagnotte(id),
+    PRIMARY KEY (users_id, cagnotte_id)
+);
+
+
+CREATE TABLE users_poche (
+    users_id INT REFERENCES users(id),
+    poche_id INT REFERENCES poche(id),
+    PRIMARY KEY (users_id, poche_id)
+);
+
