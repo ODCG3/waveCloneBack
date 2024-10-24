@@ -8,7 +8,7 @@ router.get('/', function(req, res, next) {
 });
 
 // Example endpoint
-router.get('/example', (req,res) => UserController);
+router.get('/example', (req,res) => UserController.getAll(req,res));
 
 // Export the router
 export default router;
