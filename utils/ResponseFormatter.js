@@ -20,7 +20,7 @@ class ResponseFormatter {
 const instance = new ResponseFormatter();
 Object.freeze(instance);
 
-module.exports = instance;
+export default instance;
 
 // use case
 //  res.status(status).json(responseFormatter.formatResponse(data, message, status, links));

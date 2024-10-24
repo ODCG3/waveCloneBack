@@ -1,7 +1,6 @@
-var express = require('express');
-var router = express.Router();
-const instance = require('../utils/ResponseFormatter');
-const Repository = require('../Database/Repository');
+import express from 'express';
+import UserController from '../controllers/UserController.js';
+const router = express.Router();
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
@@ -9,19 +8,7 @@ router.get('/', function(req, res, next) {
 });
 
 // Example endpoint
-router.get('/example', async(req, res) => {
-  const message = 'Data retrieved successfully';
-  const status = 200;
-  const links = [{ rel: 'self', href: '/example' }];
-  const userData = new Repository("users");
-  
-  let datas = await userData.getAll();
-  
-  
-
-  // Send the formatted response
-  res.status(status).json(instance.formatResponse(datas, message, status, links));
-});
+router.get('/example', (req,res) => UserController);
 
 // Export the router
-module.exports = router;
+export default router;

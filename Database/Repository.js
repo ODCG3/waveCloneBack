@@ -1,4 +1,4 @@
-const { PrismaClient } = require('@prisma/client');
+import { PrismaClient } from '@prisma/client';
 
 class Repository {
     constructor(model) {
@@ -35,18 +35,6 @@ class Repository {
         });
     }
 
-    async findMany(where) {
-        return this.prisma[this.model].findMany({
-            where,
-        });
-    }
-
-    async findOne(where) {
-        return this.prisma[this.model].findUnique({
-            where,
-        });
-    }
-
     async count(where) {
         return this.prisma[this.model].count({
             where,
@@ -54,4 +42,4 @@ class Repository {
     }
 }
 
-module.exports = Repository;
+export default Repository;
