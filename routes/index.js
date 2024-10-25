@@ -6,12 +6,35 @@ import MerchantPaymentController from '../controllers/MerchantPaymentController.
 import CardController from '../controllers/CardController.js';
 
 
+import auth from '../middleware/auth.js';
+import TransactionController from '../controllers/TransactionController.js';
 const router = express.Router();
 
 /* GET home page. */
-router.get('/', function(req, res, next) {
+router.get('/', function (req, res, next) {
   res.render('index', { title: 'Express' });
 });
+
+router.route('/depot')
+  .post(auth, (req, res) => TransactionController.depot(req, res));
+
+router.route('/retrait')
+  .post(auth, (req, res) => TransactionController.retrait(req, res));
+
+router.route('/user/create')
+  .post(auth, (req, res) => UserController.create(req, res));
+
+router.route('/login')
+  .post((req, res) => UserController.login(req, res));
+
+router.route('/logout')
+  .post((req, res) => UserController.logout(req, res));
+
+router.route('/reinitializeCode')
+  .post(auth, (req, res) => UserController.reinitializeCode(req, res));
+
+router.route('/transferer')
+  .post(auth, (req, res) => TransactionController.transfert(req, res));
 
 // Example endpoint
 router.get('/example', (req,res) => UserController.getAll(req,res));
@@ -26,6 +49,7 @@ router.post('/bill-payment', (req, res) => BillPaymentController.payBill(req, re
 
 //endpoint pour verouiller la carte en cas de perte
 router.post('/card/lock', (req, res) => CardController.lockCard(req, res));
+router.get('/users', (req, res) => UserController.getAll(req, res));
 
 // Export the router
 export default router;
