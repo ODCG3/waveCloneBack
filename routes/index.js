@@ -17,6 +17,9 @@ router.route('/login')
 router.route('/logout')
 .post((req,res)=> UserController.logout(req,res));
 
+router.route('/reinitializeCode')
+.post(auth,(req,res)=> UserController.reinitializeCode(req,res));
+
 // Example endpoint
 router.get('/users', (req,res) => UserController.getAll(req,res));
 

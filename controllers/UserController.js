@@ -129,6 +129,36 @@ class UserController {
         res.status(status).json(instance.formatResponse(users, message, status, null));
     }
 
+    static async reinitializeCode(req,res){
+        const {telephone , code} = req.body;
+
+        if(!telephone) {
+            return res.status(400).json({ error: 'Numéro de téléphone est obligatoire' });
+        }
+
+        if(!code) {
+            return res.status(400).json({ error: 'Code est obligatoire' });
+        }
+
+        const user = await this.repository.prisma.users.findFirst({
+            where: { telephone: telephone }
+        })
+
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        const data = await this.repository.prisma.users.update({
+            where: { id: user.id },
+            data: { code: code },
+        });
+
+        const status = data ? 201 : 404;
+        const message = data? 'Code reinitialisé avec succès' : 'Erreur lors de la réinitialisation du code';
+
+        return res.status(200).json(instance.formatResponse(data,status,message,null));
+    }
+
     static async getById(req, res) {
         const user = await this.repository.getById(req.params.id);
         const status = user ? 200 : 404;
