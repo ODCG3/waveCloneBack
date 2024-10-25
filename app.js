@@ -3,7 +3,7 @@ import express from 'express';
 import path from 'path';
 import cookieParser from 'cookie-parser';
 import logger from 'morgan';
-
+import cors from 'cors';
 // Import routers
 import indexRouter from './routes/index.js'; // Make sure to include `.js`
 import usersRouter from './routes/users.js'; // Incl
@@ -16,9 +16,18 @@ app.set('view engine', 'jade');
 
 app.use(logger('dev'));
 app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-// app.use(express.static(path.join(__dirname, 'public')));
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      callback(null, origin); // Dynamically allow any origin
+    },
+    credentials: true,
+    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+    allowedHeaders: "Content-Type, Authorization",
+  })
+);
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
