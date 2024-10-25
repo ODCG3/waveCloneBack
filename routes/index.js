@@ -9,6 +9,9 @@ import MerchantPaymentController from '../controllers/MerchantPaymentController.
 import CardController from '../controllers/CardController.js';
 
 
+
+import TransactionController from '../controllers/TransactionController.js';
+
 const router = express.Router();
 
 /* GET home page. */
@@ -28,12 +31,16 @@ router.route('/logout')
 router.route('/reinitializeCode')
 .post(auth,(req,res)=> UserController.reinitializeCode(req,res));
 
+
 //Issues endpoint
 router.route('/users/reportIssue')
 .post(auth, (req, res) => UserController.reportIssue(req, res));
 
 router.route('/admin/respondIssue')
 .post(auth, (req, res) => UserController.respondToIssueInApp(req, res));
+
+router.route('/transferer')
+.post(auth,(req,res)=> TransactionController.transfert(req,res));
 
 
 // Example endpoint
