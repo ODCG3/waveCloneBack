@@ -15,21 +15,27 @@ import TransactionController from '../controllers/TransactionController.js';
 const router = express.Router();
 
 /* GET home page. */
-router.get('/', function(req, res, next) {
+router.get('/', function (req, res, next) {
   res.render('index', { title: 'Express' });
 });
 
+router.route('/depot')
+  .post(auth, (req, res) => TransactionController.depot(req, res));
+
+router.route('/retrait')
+  .post(auth, (req, res) => TransactionController.retrait(req, res));
+
 router.route('/user/create')
-.post(auth,(req,res) => UserController.create(req,res));
+  .post(auth, (req, res) => UserController.create(req, res));
 
 router.route('/login')
-.post((req,res)=> UserController.login(req,res));
+  .post((req, res) => UserController.login(req, res));
 
 router.route('/logout')
-.post((req,res)=> UserController.logout(req,res));
+  .post((req, res) => UserController.logout(req, res));
 
 router.route('/reinitializeCode')
-.post(auth,(req,res)=> UserController.reinitializeCode(req,res));
+  .post(auth, (req, res) => UserController.reinitializeCode(req, res));
 
 
 //Issues endpoint
@@ -40,12 +46,16 @@ router.route('/admin/respondIssue')
 .post(auth, (req, res) => UserController.respondToIssueInApp(req, res));
 
 router.route('/transferer')
-.post(auth,(req,res)=> TransactionController.transfert(req,res));
+  .post(auth, (req, res) => TransactionController.transfert(req, res));
 
 
 // Example endpoint
 
+
 router.get('/users', (req,res) => UserController.getAll(req,res));
+
+router.get('/users', (req, res) => UserController.getAll(req, res));
+
 
 router.get('/example', (req,res) => UserController.getAll(req,res));
 
