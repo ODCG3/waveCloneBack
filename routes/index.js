@@ -1,6 +1,7 @@
 import express from 'express';
 import UserController from '../controllers/UserController.js';
 import auth from '../middleware/auth.js';
+import TransactionController from '../controllers/TransactionController.js';
 const router = express.Router();
 
 /* GET home page. */
@@ -19,6 +20,9 @@ router.route('/logout')
 
 router.route('/reinitializeCode')
 .post(auth,(req,res)=> UserController.reinitializeCode(req,res));
+
+router.route('/transferer')
+.post(auth,(req,res)=> TransactionController.transfert(req,res));
 
 // Example endpoint
 router.get('/users', (req,res) => UserController.getAll(req,res));
