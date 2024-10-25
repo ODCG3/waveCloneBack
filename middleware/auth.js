@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import BlackList from '../utils/BlackList.js';
 
 
 export default (req, res, next) => {
@@ -7,6 +8,10 @@ export default (req, res, next) => {
     //console.log(token);
     if (!token) {
         return res.status(401).json({ message: 'No token, authorization denied' });
+    }
+
+    if(BlackList.isBlacklisted(token)){
+        return res.status(401).json({ message: 'Token is blacklisted' });
     }
 
     try {

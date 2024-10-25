@@ -14,6 +14,9 @@ router.route('/user/create')
 router.route('/login')
 .post((req,res)=> UserController.login(req,res));
 
+router.route('/logout')
+.post((req,res)=> UserController.logout(req,res));
+
 // Example endpoint
 router.get('/users', (req,res) => UserController.getAll(req,res));
 

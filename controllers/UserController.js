@@ -5,6 +5,7 @@ import readline from 'readline';
 
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import BlackList from "../utils/BlackList.js";
 
 class UserController {
 
@@ -103,14 +104,21 @@ class UserController {
     }
 
     static logout(req, res) {
+        const token = req.cookies.token; // or retrieve it from headers, e.g., req.headers.authorization
+    
+        // Add the token to the blacklist
+        if (token) BlackList.add(token);
+    
+        console.log(BlackList.isBlacklisted(req.cookies.token),token);
+        // Clear the cookie
         res.clearCookie("token", {
-            // secure: true,
             httpOnly: true,
             path: "/",
         });
-
+    
         res.status(200).json("logged out");
     }
+    
 
     static async getAll(req, res) {
         console.log(this.repository);
