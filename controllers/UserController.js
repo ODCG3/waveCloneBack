@@ -127,6 +127,7 @@ class UserController {
         const status = users ? 200 : 404;
         const message = users ? 'Users retrieved successfully' : 'Error retrieving users';
         res.status(status).json(instance.formatResponse(users, message, status, null));
+
     }
 
     static async reinitializeCode(req,res){
@@ -170,6 +171,7 @@ class UserController {
     static async update(req, res) {
         const user = await this.repository.update(req.params.id, req.body);
         const status = user ? 201 : 404;
+
         if (!user) return res.status(404).json({ error: 'User not found' });
         const message = user ? 'User updated successfully' : 'Error updating user';
         res.status(status).json(instance.formatResponse(user, message, status, null));
@@ -178,6 +180,7 @@ class UserController {
     static async delete(req, res) {
         const user = await this.repository.delete(req.params.id);
         const status = user ? 200 : 404;
+
         if (!user) return res.status(404).json({ error: 'User not found' });
         const message = user ? 'User deleted successfully' : 'Error deleting user';
         res.status(status).json(instance.formatResponse(user, message, status, null));
