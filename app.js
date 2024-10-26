@@ -7,6 +7,8 @@ import logger from 'morgan';
 // Import routers
 import indexRouter from './routes/index.js'; // Make sure to include `.js`
 import usersRouter from './routes/users.js'; // Incl
+import promoRoutes from './routes/promoRoutes.js';
+import invitationRoutes from './routes/invitationRoutes.js';
 
 var app = express();
 
@@ -22,6 +24,11 @@ app.use(cookieParser());
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
+
+
+app.use('/api/v1', promoRoutes);
+// Intégration des routes d'invitation
+app.use('/api/v1', invitationRoutes);
 
 
 
