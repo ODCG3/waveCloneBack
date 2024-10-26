@@ -4,7 +4,7 @@ import PaymentController from '../controllers/PaymentController.js';
 import BillPaymentController from '../controllers/BillPaymentController.js';
 import MerchantPaymentController from '../controllers/MerchantPaymentController.js';
 import CardController from '../controllers/CardController.js';
-
+import GestionCadeau from '../controllers/GestionCadeau.js';
 
 import auth from '../middleware/auth.js';
 import TransactionController from '../controllers/TransactionController.js';
@@ -51,5 +51,6 @@ router.post('/bill-payment', (req, res) => BillPaymentController.payBill(req, re
 router.post('/card/lock', (req, res) => CardController.lockCard(req, res));
 router.get('/users', (req, res) => UserController.getAll(req, res));
 
+router.route('/cadeau/assigner').post(auth, (req, res) => GestionCadeau.assignCadeau(req, res));
 // Export the router
 export default router;
