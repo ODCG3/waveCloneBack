@@ -10,7 +10,10 @@ import { log } from "console";
 import path from 'path';
 
 import { generateQRCode } from "../utils/qrCodeGenerator.js";
+import NotificationsRepository from "../Database/repositories/NotificationsRepository.js";
+import ResponseFormatter from '../utils/ResponseFormatter.js';
 
+const notificationsRepository = new NotificationsRepository();
 class UserController {
 
     static repository = new Repository("users");
@@ -240,33 +243,75 @@ class UserController {
     }
 
 
-    // Méthode pour que les admins répondent directement à une issue dans l'application
+    // // Méthode pour que les admins répondent directement à une issue dans l'application
+    // static async respondToIssueInApp(req, res) {
+    //     try {
+    //         const { issueId, response } = req.body;
+
+    //         // Mettre à jour la réponse de l'admin dans la base de données
+    //         const issueRepo = new Repository("issues");
+    //         const updatedIssue = await issueRepo.update(issueId, { response });
+
+    //         if (!updatedIssue) return res.status(404).json({ error: 'Problème non trouvé' });
+
+    //         // Récupérer l'utilisateur lié à l'issue
+    //         const userRepo = new Repository("users");
+    //         const user = await userRepo.getById(updatedIssue.users_id);
+
+    //         // Envoi de la réponse par e-mail à l'utilisateur avec le nom et prénom
+    //         await EmailService.sendMail(
+    //             user.email,
+    //             'Réponse à votre demande de support',
+    //             `Votre problème : ${updatedIssue.message}\n\nRéponse de l'administrateur : ${response}\n\nCordialement,\n${user.firstName} ${user.lastName}`
+    //         );
+
+    //         res.status(200).json(instance.formatResponse(updatedIssue, 'Réponse enregistrée et envoyée avec succès', 200, null));
+    //     } catch (error) {
+    //         res.status(500).json(instance.formatResponse(null, 'Erreur lors de la réponse à l\'issue', 500, error.message));
+    //     }
+    // } 
+    
     static async respondToIssueInApp(req, res) {
         try {
             const { issueId, response } = req.body;
-
-            // Mettre à jour la réponse de l'admin dans la base de données
+    
+            // Récupérer l'issue pour obtenir l'ID de l'utilisateur associé
             const issueRepo = new Repository("issues");
-            const updatedIssue = await issueRepo.update(issueId, { response });
-
-            if (!updatedIssue) return res.status(404).json({ error: 'Problème non trouvé' });
-
+            const issue = await issueRepo.getById(issueId);
+            if (!issue) {
+                return res.status(404).json({ error: 'Problème non trouvé' });
+            }
+    
             // Récupérer l'utilisateur lié à l'issue
             const userRepo = new Repository("users");
-            const user = await userRepo.getById(updatedIssue.users_id);
-
-            // Envoi de la réponse par e-mail à l'utilisateur avec le nom et prénom
+            const user = await userRepo.getById(issue.users_id);
+            if (!user) {
+                return res.status(404).json({ error: "Utilisateur non trouvé" });
+            }
+    
+            // Créer une notification pour l'utilisateur avec la réponse de l'administrateur
+            const notificationMessage = `Réponse de l'administrateur à votre demande : ${response}`;
+            const notification = await notificationsRepository.createNotification({
+                usersId: user.id,
+                message: notificationMessage,
+                etat: false
+            });
+    
+            // Envoyer un e-mail à l'utilisateur pour l'informer de la réponse
             await EmailService.sendMail(
                 user.email,
                 'Réponse à votre demande de support',
-                `Votre problème : ${updatedIssue.message}\n\nRéponse de l'administrateur : ${response}\n\nCordialement,\n${user.firstName} ${user.lastName}`
+                `Votre problème : ${issue.message}\n\nRéponse de l'administrateur : ${response}\n\nCordialement,\nSupport`
             );
-
-            res.status(200).json(instance.formatResponse(updatedIssue, 'Réponse enregistrée et envoyée avec succès', 200, null));
+    
+            // Retourner une réponse avec la notification
+            res.status(200).json(ResponseFormatter.formatResponse(notification, 'Notification créée et envoyée avec succès', 200, null));
         } catch (error) {
-            res.status(500).json(instance.formatResponse(null, 'Erreur lors de la réponse à l\'issue', 500, error.message));
+            console.error(error); // Ajout pour voir les détails de l'erreur en console
+            res.status(500).json(ResponseFormatter.formatResponse(null, 'Erreur lors de la réponse à l\'issue', 500, error.message));
         }
-    }  
+    }
+    
 
     static async useCodePromo(req, res) {
     const { id } = req.params;
