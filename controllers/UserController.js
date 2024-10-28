@@ -178,14 +178,34 @@ class UserController {
         return res.status(200).json(instance.formatResponse(data, status, message, null));
     }
 
+   static async getById(req, res) {
+    try {
+        // Convertir req.params.id en entier
+        const id = parseInt(req.params.id, 10);
+        
+        if (isNaN(id)) {
+            return res.status(400).json({ error: 'Invalid user ID' });
+        }
 
-    static async getById(req, res) {
-        const user = await this.repository.getById(req.params.id);
-        const status = user ? 200 : 404;
-        if (!user) return res.status(404).json({ error: 'User not found' });
-        const message = user ? 'User retrieved successfully' : 'Error retrieving user';
-        res.status(status).json(instance.formatResponse(user, message, status, null));
+        const user = await this.repository.getById(id);
+        
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Créer une copie de l'objet utilisateur sans le champ `code`
+        const { code, ...userWithoutCode } = user;
+
+        const message = 'User retrieved successfully';
+        res.status(200).json(instance.formatResponse(userWithoutCode, message, 200, null));
+    } catch (error) {
+        // Gérer les erreurs éventuelles
+        res.status(500).json({ error: 'An error occurred while retrieving the user' });
     }
+}
+
+
+    
 
     static async update(req, res) {
         const user = await this.repository.update(req.params.id, req.body);

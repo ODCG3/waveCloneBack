@@ -85,6 +85,8 @@ router.route('/depot')
 
 router.route('/retrait')
   .post(auth, (req, res) => TransactionController.retrait(req, res));
+  router.post('/calculate-frais', auth, (req, res) => TransactionController.calculateurFrais(req, res));
+
 
 router.route('/user/create')
   .post((req, res) => UserController.create(req, res));
@@ -94,9 +96,14 @@ router.route('/login')
 
 router.route('/logout')
   .post((req, res) => UserController.logout(req, res));
+  router.get('/user/:id', auth, (req, res) => UserController.getById(req, res));
+
+// Mettre à jour les informations d'un utilisateur par ID
+router.put('/user/:id', auth, (req, res) => UserController.update(req, res));
 
 router.route('/reinitializeCode')
   .post(auth, (req, res) => UserController.reinitializeCode(req, res));
+
 
 router.route('/transferer')
   .post(auth, (req, res) => TransactionController.transfert(req, res));
