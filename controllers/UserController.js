@@ -145,6 +145,7 @@ class UserController {
         const status = users ? 200 : 404;
         const message = users ? 'Users retrieved successfully' : 'Error retrieving users';
         res.status(status).json(instance.formatResponse(users, message, status, null));
+
     }
 
 
