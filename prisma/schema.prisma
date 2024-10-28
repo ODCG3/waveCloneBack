@@ -124,6 +124,7 @@ model users {
   carte                                       String?                  @db.VarChar(50)
   etatcarte                                   Boolean?
   role_id                                     Int?
+  used_promo_codes                            String[]
   cadeaux                                     cadeaux[]
   cagnotte                                    cagnotte[]
   demandes_remboursement                      demandes_remboursement[]
