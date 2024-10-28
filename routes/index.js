@@ -151,5 +151,11 @@ router.post('/card/lock', (req, res) => CardController.lockCard(req, res));
 router.route('/user/stats')
   .get(auth, (req, res) => UserController.getStatistiques(req, res));
 
+router.route('/user/link-bank')
+  .post(auth, (req, res) => UserController.linkToBankAccount(req, res));
+
+router.route('/user/bank-account')
+  .get(auth, (req, res) => UserController.getBankAccount(req, res));
+
 // Export the router
 export default router;

@@ -422,7 +422,86 @@ class UserController {
         }
     }
     
-    
+    static async linkToBankAccount(req, res) {
+        const id = req.user.userId;
+
+        const user = await this.repository.prisma.users.findFirst({
+            where: { id }
+        })
+
+        if(!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        const numeroCompte = req.body.numeroCompte;
+        const dateValidation = req.body.dateValidation;
+        const cvv = req.body.cvv;
+        const bankName = req.body.bankName;
+
+        if(!numeroCompte || !dateValidation || !cvv) {
+            return res.status(400).json({ message: "Toutes Les champs sont requis" });
+        }
+
+        if(numeroCompte.length !== 13) {
+            return res.status(400).json({ message: "Le numéro de compte est incorrect" });
+        }
+
+        // date validattions format mm-dd accepted
+        const dateValidationFormat = dateValidation.split("-");
+
+        if(dateValidationFormat.length !== 2) {
+            return res.status(400).json({ message: "La date de validation est incorrecte" });
+        }
+
+        const dateValidationArray = dateValidationFormat.map(Number);
+
+        if(dateValidationArray[0] > 12 || dateValidationArray[1] > 31 || dateValidationArray[0] < 1 || dateValidationArray[1] < 1) {
+            return res.status(400).json({ message: "La date de validation est incorrecte" });
+        }
+
+        
+        if(cvv.toString().length !== 3) {
+            return res.status(400).json({ message: "Le CVV est incorrect" });
+        }
+
+        const bankAccount = await this.repository.prisma.bankaccount.create({
+            data: {
+                account_number: numeroCompte,
+                dateexpiration: dateValidation,
+                cvv,
+                name: bankName,
+                users: { connect: { id } }
+            }
+        })
+
+        const status = bankAccount ? 201 : 404;
+        const message = bankAccount ? 'Compte créé avec succès' : 'Erreur lors de la création du compte';
+        const data = bankAccount? bankAccount : null;
+
+        res.status(status).json(instance.formatResponse(data, message, status, null));
+    }
+
+    static async getBankAccount(req, res) {
+        const id = req.user.userId;
+
+        const user = await this.repository.prisma.users.findFirst({
+            where: { id }
+        })
+
+        if(!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        const bankAccount = await this.repository.prisma.bankaccount.findMany({
+            where: { users_id: id }
+        })
+
+        const status = bankAccount ? 200 : 404;
+        const message = bankAccount ? 'Compte retrouvé avec succès' : 'Erreur lors de la récupération du compte';
+        const data = bankAccount? bankAccount : null;
+
+        res.status(status).json(instance.formatResponse(data, message, status, null));
+    }
 
 }
 
