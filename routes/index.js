@@ -55,7 +55,9 @@ router.route('/cadeau/assigner').post(auth, (req, res) => GestionCadeau.assignCa
 
  
 //endpoint qui permet de lister les user par rang selon de nombre de trensactions faites 
-router.get('/user/ranking', (req, res) => ClassementController.getRanking(req, res));
+router.route('/user/ranking').get(auth, (req, res) => ClassementController.getRanking(req, res));
+
+router.route('/payment/bulk').post(auth, (req, res) => PaymentController.makeBulkPayment(req, res));
 
 // Export the router
 export default router;
