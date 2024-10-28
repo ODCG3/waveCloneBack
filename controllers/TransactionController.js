@@ -2,6 +2,9 @@ import Repository from "../Database/Repository.js";
 import instance from "../utils/ResponseFormatter.js";
 
 class TransactionController {
+
+static repository = new Repository("transaction");
+
   static async getByUserId(req, res) {
     const userId = parseInt(req.params.id);
     if (isNaN(userId)) {
@@ -274,9 +277,16 @@ class TransactionController {
     }
 
     static async depot(req,res){
+        const userID = req.user.userId;
+        console.log(userID);
+        
         let user = await this.repository.prisma.users.findUnique({
-            where: { id: req.user.userId },
+            where: { id: userID },
         });
+
+        if(user.role_id != 2){
+            return res.status(401).json({ message: "Vous n'êtes pas autorisé à effectuer cette action" });
+        }
 
         const code = req.body.code;
 
@@ -284,8 +294,8 @@ class TransactionController {
             return res.status(401).json({ message: "Vous n'êtes pas autorisé à effectuer cette action" });
         }
 
-        const client = req.body.numeroClient;
-        client = await this.repository.prisma.users.findFirst({ where: {
+        const numeroClient = req.body.numeroClient;
+        const client = await this.repository.prisma.users.findFirst({ where: {
             telephone : numeroClient
         } });
 
@@ -330,14 +340,18 @@ class TransactionController {
             where: { id: req.user.userId },
         });
 
+        if(user.role_id != 2){
+            return res.status(401).json({ message: "Vous n'êtes pas autorisé à effectuer cette action" });
+        }
+
         const code = req.body.code;
 
         if(user.code!= code){
             return res.status(401).json({ message: "Vous n'êtes pas autorisé à effectuer cette action" });
         }
 
-        const client = req.body.numeroClient;
-        client = await this.repository.prisma.users.findFirst({ where: {
+        const numeroClient = req.body.numeroClient;
+        const client = await this.repository.prisma.users.findFirst({ where: {
             telephone : numeroClient
         } });
 

@@ -33,7 +33,7 @@ export const sendSMS = async (to, message) => {
     try {
         const messageResponse = await twilioClient.messages.create({
             body: message,
-            from: process.env.TWILIO_PHONE,
+            from: process.env.TWILIO_SENDER,
             to,
         });
         console.log('SMS envoyé avec succès à', to);
