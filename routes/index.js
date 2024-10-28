@@ -146,6 +146,8 @@ router.post('/bill-payment', (req, res) => BillPaymentController.payBill(req, re
 //endpoint pour verouiller la carte en cas de perte
 router.post('/card/lock', (req, res) => CardController.lockCard(req, res));
 
+router.route('/user/stats')
+  .get(auth, (req, res) => UserController.getStatistiques(req, res));
 
 // Export the router
 export default router;
