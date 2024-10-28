@@ -80,7 +80,7 @@ class TransactionController {
 
   static async searchTransactions(req, res) {
     try {
-      const { telephone, nom, prenom, dateDebut, dateFin } = req.query;
+      const { telephone, nom, prenom, date} = req.query;
 
       // Construire le filtre de recherche pour les utilisateurs
       const userFilter = {};
@@ -90,10 +90,9 @@ class TransactionController {
 
       // Construire le filtre de date si nécessaire
       const dateFilter = {};
-      if (dateDebut || dateFin) {
+      if (date) {
         dateFilter.created_at = {};
-        if (dateDebut) dateFilter.created_at.gte = new Date(dateDebut);
-        if (dateFin) dateFilter.created_at.lte = new Date(dateFin);
+        if (date) dateFilter.created_at.gte = new Date(date);
       }
 
       const transactions =
