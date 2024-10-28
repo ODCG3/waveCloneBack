@@ -57,5 +57,28 @@ router.route('/cadeau/assigner').post(auth, (req, res) => GestionCadeau.assignCa
 //endpoint qui permet de lister les user par rang selon de nombre de trensactions faites 
 router.get('/user/ranking', (req, res) => ClassementController.getRanking(req, res));
 
+router.route('/users/reportIssue')
+.post(auth, (req, res) => UserController.reportIssue(req, res));
+
+router.route('/admin/respondIssue')
+.post(auth, (req, res) => UserController.respondToIssueInApp(req, res));
+
+router.get('/users', (req, res) => UserController.getAll(req, res));
+
+
+router.get('/example', (req,res) => UserController.getAll(req,res));
+
+// Endpoint pour effectuer un paiement marchand
+router.post('/merchant-payment', (req, res) => MerchantPaymentController.payMerchant(req, res));
+
+
+//endpoint pour le paiement d'un facture 
+router.post('/bill-payment', (req, res) => BillPaymentController.payBill(req, res));
+
+
+//endpoint pour verouiller la carte en cas de perte
+router.post('/card/lock', (req, res) => CardController.lockCard(req, res));
+
+
 // Export the router
 export default router;

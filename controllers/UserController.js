@@ -6,6 +6,11 @@ import readline from 'readline';
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import BlackList from "../utils/BlackList.js";
+import EmailService from "../Services/EmailService.js";
+import { log } from "console";
+import path from 'path';
+
+import { generateQRCode } from "../utils/qrCodeGenerator.js";
 
 class UserController {
 
@@ -17,38 +22,39 @@ class UserController {
 
     static async create(req, res) {
         const { nom, prenom, telephone, email, solde = 0, promo = 0, etatCarte = true, roleId } = req.body;
-
-        // Basic validation
+    
+        // Validation des champs requis
         if (!nom || !prenom || !telephone || !email || !roleId) {
-            return res.status(400).json(instance.formatResponse(null, "All fields are required", 400, null));
+            return res.status(400).json(instance.formatResponse(null, "Tous les champs sont requis", 400, null));
         }
-
-        // Check if user already exists with same email or telephone
+    
+        // Vérifier si l'utilisateur existe déjà
         const userExists = await this.repository.prisma.users.findFirst({
             where: { OR: [{ email }, { telephone }] },
         });
-
+    
         if (userExists) {
-            return res.status(400).json(instance.formatResponse(null, "User with this email or telephone already exists", 400, null));
+            return res.status(400).json(instance.formatResponse(null, "Un utilisateur avec cet email ou téléphone existe déjà", 400, null));
         }
-
-        // Generate verification code and send it via SMS
+    
+        // Générer un code de vérification et l'envoyer par SMS
         const code = this.generateCode(telephone, nom, prenom);
         console.log("Generated code:", code);
-
-        // Send SMS with code
+    
+        // Envoyer le code par SMS
         await SendSms.send('+221' + telephone, code);
-
-        // Check if role exists
+    
+        // Vérifier si le rôle existe
         const role = await this.repository.prisma.role.findUnique({
             where: { id: roleId },
         });
-
+    
         if (!role) {
-            return res.status(400).json(instance.formatResponse(null, "Invalid role ID", 400, null));
+            return res.status(400).json(instance.formatResponse(null, "ID de rôle invalide", 400, null));
         }
-
-        // Save user to database with generated code
+    
+        // Créer l'utilisateur dans la base de données avec un chemin local temporaire
+        const tempQrPath = path.join('public', 'qrcodes', `qr_${Date.now()}.png`);
         const user = await this.repository.create({
             nom,
             prenom,
@@ -57,26 +63,38 @@ class UserController {
             solde,
             promo,
             etatcarte: etatCarte,
-            role: {
-                connect: { id: roleId },
-            },
-            code,  // save code to compare later
-            carte: "img.png",
+            role: { connect: { id: roleId } },
+            code,  // Sauvegarder le code pour comparaison ultérieure
+            carte: tempQrPath,  // Temporaire, sera remplacé par l'URL du QR code
         });
-
-        const message = user ? 'User created successfully' : 'Error creating user';
-        const status = user ? 201 : 404;
-        return res.status(status).json(instance.formatResponse(user, message, status, null));
+    
+        if (!user) {
+            return res.status(404).json(instance.formatResponse(null, "Erreur lors de la création de l'utilisateur", 404, null));
+        }
+    
+        try {
+            // Générer le QR code et obtenir l'URL de Cloudinary
+            const qrUrl = await generateQRCode(user);
+    
+            // Mettre à jour la colonne `carte` avec l'URL du QR code
+            await this.repository.update(user.id, { carte: qrUrl });
+    
+            return res.status(201).json(instance.formatResponse(user, 'Utilisateur créé avec succès et QR Code généré', 201, null));
+    
+        } catch (error) {
+            console.error('Erreur lors de la génération du QR Code:', error);
+            return res.status(500).json({ error: 'Erreur lors de la génération du QR Code' });
+        }
     }
 
     static async login(req, res) {
         const numero = req.body.numero;
 
-        if(!numero) {
+        if (!numero) {
             return res.status(400).json({ error: 'Numero de téléphone est obligatoire' });
         }
 
-        if(!req.body.code) {
+        if (!req.body.code) {
             return res.status(400).json({ error: 'Code est obligatoire' });
         }
 
@@ -105,20 +123,20 @@ class UserController {
 
     static logout(req, res) {
         const token = req.cookies.token; // or retrieve it from headers, e.g., req.headers.authorization
-    
+
         // Add the token to the blacklist
         if (token) BlackList.add(token);
-    
-        console.log(BlackList.isBlacklisted(req.cookies.token),token);
+
+        console.log(BlackList.isBlacklisted(req.cookies.token), token);
         // Clear the cookie
         res.clearCookie("token", {
             httpOnly: true,
             path: "/",
         });
-    
+
         res.status(200).json("logged out");
     }
-    
+
 
     static async getAll(req, res) {
         console.log(this.repository);
@@ -130,14 +148,15 @@ class UserController {
 
     }
 
-    static async reinitializeCode(req,res){
-        const {telephone , code} = req.body;
 
-        if(!telephone) {
+    static async reinitializeCode(req, res) {
+        const { telephone, code } = req.body;
+
+        if (!telephone) {
             return res.status(400).json({ error: 'Numéro de téléphone est obligatoire' });
         }
 
-        if(!code) {
+        if (!code) {
             return res.status(400).json({ error: 'Code est obligatoire' });
         }
 
@@ -155,10 +174,11 @@ class UserController {
         });
 
         const status = data ? 201 : 404;
-        const message = data? 'Code reinitialisé avec succès' : 'Erreur lors de la réinitialisation du code';
+        const message = data ? 'Code reinitialisé avec succès' : 'Erreur lors de la réinitialisation du code';
 
-        return res.status(200).json(instance.formatResponse(data,status,message,null));
+        return res.status(200).json(instance.formatResponse(data, status, message, null));
     }
+
 
     static async getById(req, res) {
         const user = await this.repository.getById(req.params.id);
@@ -174,6 +194,7 @@ class UserController {
 
         if (!user) return res.status(404).json({ error: 'User not found' });
         const message = user ? 'User updated successfully' : 'Error updating user';
+
         res.status(status).json(instance.formatResponse(user, message, status, null));
     }
 
@@ -183,8 +204,70 @@ class UserController {
 
         if (!user) return res.status(404).json({ error: 'User not found' });
         const message = user ? 'User deleted successfully' : 'Error deleting user';
+
         res.status(status).json(instance.formatResponse(user, message, status, null));
     }
+
+    // Méthode pour signaler un problème
+    static async reportIssue(req, res) {
+        try {
+            const userId = req.user.userId;
+            console.log("user :", req.user);
+            
+            console.log("id :" ,userId);
+            
+            const { message } = req.body;
+
+            // Sauvegarder l'issue dans la base de données
+            const issueRepo = new Repository("issues");
+            const issue = await issueRepo.create({ users_id: userId, message });
+
+            // Récupérer les informations de l'utilisateur
+            const userRepo = new Repository("users");
+            const user = await userRepo.getById(userId);
+
+            // Envoi d'un e-mail à l'administrateur
+            await EmailService.sendMail(
+                process.env.ADMIN_SUPPORT_EMAIL,
+                'Nouvelle demande de support utilisateur',
+                `L'utilisateur ${user.prenom} ${user.nom} a signalé un problème : ${message}`
+            );
+
+            res.status(201).json(instance.formatResponse(issue, 'Problème signalé avec succès', 201, null));
+        } catch (error) {
+            console.error('Erreur:', error);
+            res.status(500).json(instance.formatResponse(null, 'Erreur lors du signalement du problème', 500, error.message));
+        }
+    }
+
+
+    // Méthode pour que les admins répondent directement à une issue dans l'application
+    static async respondToIssueInApp(req, res) {
+        try {
+            const { issueId, response } = req.body;
+
+            // Mettre à jour la réponse de l'admin dans la base de données
+            const issueRepo = new Repository("issues");
+            const updatedIssue = await issueRepo.update(issueId, { response });
+
+            if (!updatedIssue) return res.status(404).json({ error: 'Problème non trouvé' });
+
+            // Récupérer l'utilisateur lié à l'issue
+            const userRepo = new Repository("users");
+            const user = await userRepo.getById(updatedIssue.users_id);
+
+            // Envoi de la réponse par e-mail à l'utilisateur avec le nom et prénom
+            await EmailService.sendMail(
+                user.email,
+                'Réponse à votre demande de support',
+                `Votre problème : ${updatedIssue.message}\n\nRéponse de l'administrateur : ${response}\n\nCordialement,\n${user.firstName} ${user.lastName}`
+            );
+
+            res.status(200).json(instance.formatResponse(updatedIssue, 'Réponse enregistrée et envoyée avec succès', 200, null));
+        } catch (error) {
+            res.status(500).json(instance.formatResponse(null, 'Erreur lors de la réponse à l\'issue', 500, error.message));
+        }
+    }  
 
 }
 
