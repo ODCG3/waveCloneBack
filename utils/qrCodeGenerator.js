@@ -1,5 +1,5 @@
 // utils/qrCodeGenerator.js
-import cloudinary from "./cloudinaryConfig.js";
+import cloudinary from "./cloudinary.js";
 import QRCode from "qrcode";
 import path from "path";
 import fs from "fs";

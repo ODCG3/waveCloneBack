@@ -5,11 +5,6 @@ import TestNotificationController from '../controllers/TestNotificationControlle
 import DemandesRemboursementController from '../controllers/DemandesRemboursementController.js';
 import NotificationsController from '../controllers/NotificationsController.js';
 import PromoController from '../controllers/PromoController.js';
-
-
-
-
-
 import PaymentController from '../controllers/PaymentController.js';
 import BillPaymentController from '../controllers/BillPaymentController.js';
 import MerchantPaymentController from '../controllers/MerchantPaymentController.js';
@@ -86,13 +81,13 @@ router.put('/:notificationId', NotificationsController.updateNotificationStatus)
 router.post('/test-notifications', TestNotificationController.testNotifications);
 
 router.route('/depot')
-  .post( (req, res) => TransactionController.depot(req, res));
+  .post(auth, (req, res) => TransactionController.depot(req, res));
 
 router.route('/retrait')
-  .post( (req, res) => TransactionController.retrait(req, res));
+  .post(auth, (req, res) => TransactionController.retrait(req, res));
 
 router.route('/user/create')
-  .post(auth, (req, res) => UserController.create(req, res));
+  .post((req, res) => UserController.create(req, res));
 
 router.route('/login')
   .post((req, res) => UserController.login(req, res));
