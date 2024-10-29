@@ -1,13 +1,13 @@
 import instance from "../utils/ResponseFormatter.js";
 import Repository from "../Database/Repository.js";
 import SendSms from "../utils/SendSms.js";
-import readline from 'readline';
+import readline from "readline";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import BlackList from "../utils/BlackList.js";
 import EmailService from "../Services/EmailService.js";
 import { log } from "console";
-import path from 'path';
+import path from "path";
 
 import { generateQRCode } from "../utils/qrCodeGenerator.js";
 import NotificationsRepository from "../Database/repositories/NotificationsRepository.js";
@@ -15,12 +15,18 @@ import ResponseFormatter from '../utils/ResponseFormatter.js';
 
 const notificationsRepository = new NotificationsRepository();
 class UserController {
+  static repository = new Repository("users");
 
-    static repository = new Repository("users");
-
-    static generateCode = (telephone, nom, prenom) => {
-        return Math.round(Math.random() * 10000) + "_" + telephone[3] + telephone[2] + nom + prenom.length;
-    }
+  static generateCode = (telephone, nom, prenom) => {
+    return (
+      Math.round(Math.random() * 10000) +
+      "_" +
+      telephone[3] +
+      telephone[2] +
+      nom +
+      prenom.length
+    );
+  };
 
     static async create(req, res) {
         const { nom, prenom, telephone, email, solde = 0, promo = 0, etatCarte = true, roleId } = req.body;
@@ -89,94 +95,102 @@ class UserController {
         }
     }
 
-    static async login(req, res) {
-        const numero = req.body.numero;
+  static async login(req, res) {
+    const numero = req.body.numero;
 
-        if (!numero) {
-            return res.status(400).json({ error: 'Numero de téléphone est obligatoire' });
-        }
-
-        if (!req.body.code) {
-            return res.status(400).json({ error: 'Code est obligatoire' });
-        }
-
-        const user = await this.repository.prisma.users.findFirst({
-            where: { telephone: numero }
-        })
-
-        if (!user) {
-            return res.status(404).json({ error: 'User not found' });
-        }
-
-        if (user.code !== req.body.code) {
-            return res.status(401).json({ error: 'Invalid code' });
-        }
-
-        const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-
-        res.cookie("token", token, {
-            httpOnly: true,
-            path: "/",
-        });
-
-        res.status(200).json({ token, user });
-
+    if (!numero) {
+      return res
+        .status(400)
+        .json({ error: "Numero de téléphone est obligatoire" });
     }
 
-    static logout(req, res) {
-        const token = req.cookies.token; // or retrieve it from headers, e.g., req.headers.authorization
-
-        // Add the token to the blacklist
-        if (token) BlackList.add(token);
-
-        console.log(BlackList.isBlacklisted(req.cookies.token), token);
-        // Clear the cookie
-        res.clearCookie("token", {
-            httpOnly: true,
-            path: "/",
-        });
-
-        res.status(200).json("logged out");
+    if (!req.body.code) {
+      return res.status(400).json({ error: "Code est obligatoire" });
     }
 
+    const user = await this.repository.prisma.users.findFirst({
+      where: { telephone: numero },
+    });
 
-    static async getAll(req, res) {
-        console.log(this.repository);
-
-        const users = await this.repository.getAll();
-        const status = users ? 200 : 404;
-        const message = users ? 'Users retrieved successfully' : 'Error retrieving users';
-        res.status(status).json(instance.formatResponse(users, message, status, null));
-
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
     }
 
+    if (user.code !== req.body.code) {
+      return res.status(401).json({ error: "Invalid code" });
+    }
 
-    static async reinitializeCode(req, res) {
-        const { telephone, code } = req.body;
+    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, {
+      expiresIn: "1h",
+    });
 
-        if (!telephone) {
-            return res.status(400).json({ error: 'Numéro de téléphone est obligatoire' });
-        }
+    res.cookie("token", token, {
+      httpOnly: true,
+      path: "/",
+    });
 
-        if (!code) {
-            return res.status(400).json({ error: 'Code est obligatoire' });
-        }
+    res.status(200).json({ token, user });
+  }
 
-        const user = await this.repository.prisma.users.findFirst({
-            where: { telephone: telephone }
-        })
+  static logout(req, res) {
+    const token = req.cookies.token; // or retrieve it from headers, e.g., req.headers.authorization
 
-        if (!user) {
-            return res.status(404).json({ error: 'User not found' });
-        }
+    // Add the token to the blacklist
+    if (token) BlackList.add(token);
 
-        const data = await this.repository.prisma.users.update({
-            where: { id: user.id },
-            data: { code: code },
-        });
+    console.log(BlackList.isBlacklisted(req.cookies.token), token);
+    // Clear the cookie
+    res.clearCookie("token", {
+      httpOnly: true,
+      path: "/",
+    });
 
-        const status = data ? 201 : 404;
-        const message = data ? 'Code reinitialisé avec succès' : 'Erreur lors de la réinitialisation du code';
+    res.status(200).json("logged out");
+  }
+
+  static async getAll(req, res) {
+    console.log(this.repository);
+
+    const users = await this.repository.getAll();
+    const status = users ? 200 : 404;
+    const message = users
+      ? "Users retrieved successfully"
+      : "Error retrieving users";
+    res
+      .status(status)
+      .json(instance.formatResponse(users, message, status, null));
+  }
+
+  static async reinitializeCode(req, res) {
+    const { telephone, code } = req.body;
+
+    if (!telephone) {
+      return res
+        .status(400)
+        .json({ error: "Numéro de téléphone est obligatoire" });
+    }
+
+    if (!code) {
+      return res.status(400).json({ error: "Code est obligatoire" });
+    }
+
+    const user = await this.repository.prisma.users.findFirst({
+      where: { telephone: telephone },
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const data = await this.repository.prisma.users.update({
+      where: { id: user.id },
+      data: { code: code },
+    });
+
+    const status = data ? 201 : 404;
+    const message = data
+      ? "Code reinitialisé avec succès"
+      : "Erreur lors de la réinitialisation du code";
 
         return res.status(200).json(instance.formatResponse(data, status, message, null));
     }
@@ -210,25 +224,29 @@ class UserController {
 
     
 
-    static async update(req, res) {
-        const user = await this.repository.update(req.params.id, req.body);
-        const status = user ? 201 : 404;
+  static async update(req, res) {
+    const user = await this.repository.update(req.params.id, req.body);
+    const status = user ? 201 : 404;
 
-        if (!user) return res.status(404).json({ error: 'User not found' });
-        const message = user ? 'User updated successfully' : 'Error updating user';
+    if (!user) return res.status(404).json({ error: "User not found" });
+    const message = user ? "User updated successfully" : "Error updating user";
 
-        res.status(status).json(instance.formatResponse(user, message, status, null));
-    }
+    res
+      .status(status)
+      .json(instance.formatResponse(user, message, status, null));
+  }
 
-    static async delete(req, res) {
-        const user = await this.repository.delete(req.params.id);
-        const status = user ? 200 : 404;
+  static async delete(req, res) {
+    const user = await this.repository.delete(req.params.id);
+    const status = user ? 200 : 404;
 
-        if (!user) return res.status(404).json({ error: 'User not found' });
-        const message = user ? 'User deleted successfully' : 'Error deleting user';
+    if (!user) return res.status(404).json({ error: "User not found" });
+    const message = user ? "User deleted successfully" : "Error deleting user";
 
-        res.status(status).json(instance.formatResponse(user, message, status, null));
-    }
+    res
+      .status(status)
+      .json(instance.formatResponse(user, message, status, null));
+  }
 
     // Méthode pour signaler un problème
     static async reportIssue(req, res) {
@@ -240,28 +258,45 @@ class UserController {
 
             const { message } = req.body;
 
-            // Sauvegarder l'issue dans la base de données
-            const issueRepo = new Repository("issues");
-            const issue = await issueRepo.create({ users_id: userId, message });
+      // Sauvegarder l'issue dans la base de données
+      const issueRepo = new Repository("issues");
+      const issue = await issueRepo.create({ users_id: userId, message });
 
-            // Récupérer les informations de l'utilisateur
-            const userRepo = new Repository("users");
-            const user = await userRepo.getById(userId);
+      // Récupérer les informations de l'utilisateur
+      const userRepo = new Repository("users");
+      const user = await userRepo.getById(userId);
 
-            // Envoi d'un e-mail à l'administrateur
-            await EmailService.sendMail(
-                process.env.ADMIN_SUPPORT_EMAIL,
-                'Nouvelle demande de support utilisateur',
-                `L'utilisateur ${user.prenom} ${user.nom} a signalé un problème : ${message}`
-            );
+      // Envoi d'un e-mail à l'administrateur
+      await EmailService.sendMail(
+        process.env.ADMIN_SUPPORT_EMAIL,
+        "Nouvelle demande de support utilisateur",
+        `L'utilisateur ${user.prenom} ${user.nom} a signalé un problème : ${message}`
+      );
 
-            res.status(201).json(instance.formatResponse(issue, 'Problème signalé avec succès', 201, null));
-        } catch (error) {
-            console.error('Erreur:', error);
-            res.status(500).json(instance.formatResponse(null, 'Erreur lors du signalement du problème', 500, error.message));
-        }
+      res
+        .status(201)
+        .json(
+          instance.formatResponse(
+            issue,
+            "Problème signalé avec succès",
+            201,
+            null
+          )
+        );
+    } catch (error) {
+      console.error("Erreur:", error);
+      res
+        .status(500)
+        .json(
+          instance.formatResponse(
+            null,
+            "Erreur lors du signalement du problème",
+            500,
+            error.message
+          )
+        );
     }
-
+  }
 
     // // Méthode pour que les admins répondent directement à une issue dans l'application
     // static async respondToIssueInApp(req, res) {
@@ -332,22 +367,25 @@ class UserController {
         }
     }
 
-    static async useCodePromo(req, res) {
-        const { id } = req.params;
-        const { code_promo } = req.body;
-        const userRepository = new Repository("users");
-        const promoRepository = new Repository("code_promo");
+  static async useCodePromo(req, res) {
+    const connectedClientID = req.user.userId;
+    if (!connectedClientID) {
+      return res.status(400).json({ message: "Non connecté" });
+    }
 
-        try {
-            // Convertir l'ID en entier
-            const userId = parseInt(id, 10);
-            if (isNaN(userId)) {
-                return res
-                    .status(400)
-                    .json({
-                        message: "L'ID de l'utilisateur doit être un nombre valide",
-                    });
-            }
+    const { code_promo } = req.body;
+    const userRepository = new Repository("users");
+    const promoRepository = new Repository("code_promo");
+
+    try {
+      // Convertir l'ID en entier
+      //   const userId = parseInt(id, 10);
+      const userId = parseInt(connectedClientID, 10);
+      if (isNaN(userId)) {
+        return res.status(400).json({
+          message: "L'ID de l'utilisateur doit être un nombre valide",
+        });
+      }
 
             // Vérifier si l'utilisateur existe
             const user = await userRepository.getById(userId);
@@ -370,203 +408,23 @@ class UserController {
                 });
             }
 
-            // Ajouter le code promo et mettre à jour l'utilisateur
-            const updatedUser = await userRepository.update(userId, {
-                promo: promo.taux,
-                used_promo_codes: {
-                    push: code_promo, // Ajoute le code promo au tableau used_promo_codes
-                },
-            });
+      // Ajouter le code promo et mettre à jour l'utilisateur
+      const updatedUser = await userRepository.update(userId, {
+        promo: promo.taux,
+        used_promo_codes: {
+          push: code_promo, // Ajoute le code promo au tableau used_promo_codes
+        },
+      });
 
-            res.status(200).json({
-                message: "Code promo appliqué avec succès",
-                user: updatedUser,
-            });
-        } catch (error) {
-            console.error("Erreur serveur:", error);
-            res.status(500).json({ message: "Erreur serveur", error: error.message });
-        }
+      res.status(200).json({
+        message: "Code promo appliqué avec succès",
+        user: updatedUser,
+      });
+    } catch (error) {
+      console.error("Erreur serveur:", error);
+      res.status(500).json({ message: "Erreur serveur", error: error.message });
     }
-
-    static async getStatistiques(req, res) {
-        try {
-            const userID = req.user.userId;
-    
-            // Fetch the user
-            const user = await this.repository.prisma.users.findFirst({
-                where: { id: userID }
-            });
-    
-            if (!user) {
-                return res.status(404).json({ message: "User not found" });
-            }
-    
-            // Fetch statistics using Promise.all for better performance
-            const [
-                totalDepot,
-                totalRetrait,
-                totalTransfert,
-                totalPaiements,
-                // totalOperations,
-                avgDepot,
-                avgRetrait,
-                maxDepot,
-                minRetrait,
-                // latestDepotDate
-            ] = await Promise.all([
-                // Sum of deposits
-                this.repository.prisma.transaction.aggregate({
-                    where: { destinataire: userID, type_id: 2 },
-                    _sum: { montant: true },
-                }),
-                // Sum of withdrawals
-                this.repository.prisma.transaction.aggregate({
-                    where: { destinataire: userID, type_id: 3 },
-                    _sum: { montant: true },
-                }),
-                // Sum of transfers
-                this.repository.prisma.transaction.aggregate({
-                    where: { exp: userID, type_id: 1 },
-                    _sum: { montant: true },
-                }),
-                // Sum of payments
-                this.repository.prisma.transaction.aggregate({
-                    where: { exp: userID, type_id: 4 },
-                    _sum: { montant: true },
-                }),
-                // // Count total operations
-                // this.repository.prisma.transaction.count({
-                //     where: { users_id: userID }
-                // }),
-                // Average deposit amount
-                this.repository.prisma.transaction.aggregate({
-                    where: { destinataire: userID, type_id: 2 },
-                    _avg: { montant: true },
-                }),
-                // Average withdrawal amount
-                this.repository.prisma.transaction.aggregate({
-                    where: { destinataire: userID, type_id: 3 },
-                    _avg: { montant: true },
-                }),
-                // Maximum deposit amount
-                this.repository.prisma.transaction.aggregate({
-                    where: { destinataire: userID, type_id: 2 },
-                    _max: { montant: true },
-                }),
-                // Minimum withdrawal amount
-                this.repository.prisma.transaction.aggregate({
-                    where: { destinataire: userID, type_id: 3 },
-                    _min: { montant: true },
-                }),
-                // Latest deposit date
-                // this.repository.prisma.transaction.findFirst({
-                //     where: { destinataire: userID, type_id: 2 },
-                //     orderBy: { date: 'desc' },
-                //     select: { date: true }
-                // })
-            ]);
-    
-            // Respond with the aggregated statistics
-            res.status(200).json({
-                user,
-                totalDepot: totalDepot._sum.montant || 0,
-                totalRetrait: totalRetrait._sum.montant || 0,
-                totalTransfert: totalTransfert._sum.montant || 0,
-                totalPaiements: totalPaiements._sum.montant || 0,
-                // totalOperations,
-                avgDepot: avgDepot._avg.montant || 0,
-                avgRetrait: avgRetrait._avg.montant || 0,
-                maxDepot: maxDepot._max.montant || 0,
-                minRetrait: minRetrait._min.montant || 0,
-                // latestDepotDate: latestDepotDate?.date || null,
-            });
-        } catch (error) {
-            console.error("Erreur serveur:", error);
-            res.status(500).json({ message: "Erreur serveur", error: error.message });
-        }
-    }
-    
-    static async linkToBankAccount(req, res) {
-        const id = req.user.userId;
-
-        const user = await this.repository.prisma.users.findFirst({
-            where: { id }
-        })
-
-        if(!user) {
-            return res.status(404).json({ message: "User not found" });
-        }
-
-        const numeroCompte = req.body.numeroCompte;
-        const dateValidation = req.body.dateValidation;
-        const cvv = req.body.cvv;
-        const bankName = req.body.bankName;
-
-        if(!numeroCompte || !dateValidation || !cvv) {
-            return res.status(400).json({ message: "Toutes Les champs sont requis" });
-        }
-
-        if(numeroCompte.length !== 13) {
-            return res.status(400).json({ message: "Le numéro de compte est incorrect" });
-        }
-
-        // date validattions format mm-dd accepted
-        const dateValidationFormat = dateValidation.split("-");
-
-        if(dateValidationFormat.length !== 2) {
-            return res.status(400).json({ message: "La date de validation est incorrecte" });
-        }
-
-        const dateValidationArray = dateValidationFormat.map(Number);
-
-        if(dateValidationArray[0] > 12 || dateValidationArray[1] > 31 || dateValidationArray[0] < 1 || dateValidationArray[1] < 1) {
-            return res.status(400).json({ message: "La date de validation est incorrecte" });
-        }
-
-        
-        if(cvv.toString().length !== 3) {
-            return res.status(400).json({ message: "Le CVV est incorrect" });
-        }
-
-        const bankAccount = await this.repository.prisma.bankaccount.create({
-            data: {
-                account_number: numeroCompte,
-                dateexpiration: dateValidation,
-                cvv,
-                name: bankName,
-                users: { connect: { id } }
-            }
-        })
-
-        const status = bankAccount ? 201 : 404;
-        const message = bankAccount ? 'Compte créé avec succès' : 'Erreur lors de la création du compte';
-        const data = bankAccount? bankAccount : null;
-
-        res.status(status).json(instance.formatResponse(data, message, status, null));
-    }
-
-    static async getBankAccount(req, res) {
-        const id = req.user.userId;
-
-        const user = await this.repository.prisma.users.findFirst({
-            where: { id }
-        })
-
-        if(!user) {
-            return res.status(404).json({ message: "User not found" });
-        }
-
-        const bankAccount = await this.repository.prisma.bankaccount.findMany({
-            where: { users_id: id }
-        })
-
-        const status = bankAccount ? 200 : 404;
-        const message = bankAccount ? 'Compte retrouvé avec succès' : 'Erreur lors de la récupération du compte';
-        const data = bankAccount? bankAccount : null;
-
-        res.status(status).json(instance.formatResponse(data, message, status, null));
-    }
-
+  }
 }
 
 export default UserController;
