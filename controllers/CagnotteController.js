@@ -1,20 +1,72 @@
-// controllers/CagnotteController.js
 import instance from "../utils/ResponseFormatter.js";
-import Repository from "../Database/Repository.js";
 import { PrismaClient } from '@prisma/client';
+import jwt from 'jsonwebtoken';
+
 const prisma = new PrismaClient();
 
-
-
 class CagnotteController {
-    static repository = new Repository("cagnotte");
+    // Fonction utilitaire pour masquer les informations sensibles
+    static sanitizeUserData(user, isOwner = false) {
+        if (!user) return null;
+        
+        // Si c'est le propriétaire, on renvoie toutes les informations
+        if (isOwner) {
+            return {
+                id: user.id,
+                nom: user.nom,
+                prenom: user.prenom,
+                email: user.email,
+                telephone: user.telephone,
+                solde: user.solde
+            };
+        }
+        
+        // Sinon, on ne renvoie que les informations publiques
+        return {
+            id: user.id,
+            nom: user.nom,
+            prenom: user.prenom
+        };
+    }
+
+    // Fonction utilitaire pour masquer les informations de la cagnotte
+    static sanitizeCagnotteData(cagnotte, userId) {
+        if (!cagnotte) return null;
+
+        const isOwner = cagnotte.users_id === userId;
+        
+        return {
+            id: cagnotte.id,
+            montant: isOwner ? cagnotte.montant : "***",
+            montant_objectif: cagnotte.montant_objectif,
+            users_cagnotte: cagnotte.users_cagnotte.map(uc => ({
+                users_id: uc.users_id,
+                cagnotte_id: uc.cagnotte_id,
+                users: this.sanitizeUserData(uc.users, uc.users_id === userId)
+            }))
+        };
+    }
 
     static async create(req, res) {
         try {
-            const { montant_objectif } = req.body;
-            const users_id = 1; // ID fixe pour le moment
+            const token = req.cookies.token;
+            
+            if (!token) {
+                return res.status(401).json(
+                    instance.formatResponse(
+                        null,
+                        "Authentification requise",
+                        401,
+                        "AUTH_ERROR"
+                    )
+                );
+            }
 
-            // Validation
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            const users_id = decoded.userId;
+
+            const { montant_objectif } = req.body;
+
             if (!montant_objectif || montant_objectif <= 0) {
                 return res.status(400).json(
                     instance.formatResponse(
@@ -26,7 +78,6 @@ class CagnotteController {
                 );
             }
 
-            // Créer la cagnotte
             const nouvelleCagnotte = await prisma.cagnotte.create({
                 data: {
                     users_id: users_id,
@@ -39,13 +90,17 @@ class CagnotteController {
                     }
                 },
                 include: {
-                    users_cagnotte: true
+                    users_cagnotte: {
+                        include: {
+                            users: true
+                        }
+                    }
                 }
             });
 
             return res.status(201).json(
                 instance.formatResponse(
-                    nouvelleCagnotte,
+                    this.sanitizeCagnotteData(nouvelleCagnotte, users_id),
                     "Cagnotte créée avec succès",
                     201,
                     null
@@ -66,11 +121,25 @@ class CagnotteController {
 
     static async contribute(req, res) {
         try {
+            const token = req.cookies.token;
+            
+            if (!token) {
+                return res.status(401).json(
+                    instance.formatResponse(
+                        null,
+                        "Authentification requise",
+                        401,
+                        "AUTH_ERROR"
+                    )
+                );
+            }
+
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            const users_id = decoded.userId;
+
             const { montant } = req.body;
             const { cagnotteId } = req.params;
-            const users_id = 1; // ID fixe pour le moment
 
-            // Validation
             if (!montant || montant <= 0) {
                 return res.status(400).json(
                     instance.formatResponse(
@@ -82,7 +151,6 @@ class CagnotteController {
                 );
             }
 
-            // Vérifier si la cagnotte existe
             const cagnotte = await prisma.cagnotte.findUnique({
                 where: { id: parseInt(cagnotteId) }
             });
@@ -98,7 +166,21 @@ class CagnotteController {
                 );
             }
 
-            // Mettre à jour le montant de la cagnotte
+            const user = await prisma.users.findUnique({
+                where: { id: users_id }
+            });
+
+            if (!user || user.solde < montant) {
+                return res.status(400).json(
+                    instance.formatResponse(
+                        null,
+                        "Solde insuffisant",
+                        400,
+                        "INSUFFICIENT_FUNDS"
+                    )
+                );
+            }
+
             const updatedCagnotte = await prisma.cagnotte.update({
                 where: { id: parseInt(cagnotteId) },
                 data: {
@@ -112,15 +194,31 @@ class CagnotteController {
                     }
                 },
                 include: {
-                    users_cagnotte: true
+                    users_cagnotte: {
+                        include: {
+                            users: true
+                        }
+                    }
                 }
             });
 
-            // Créer une transaction pour la contribution
+            await prisma.users.update({
+                where: { id: users_id },
+                data: {
+                    solde: {
+                        decrement: parseFloat(montant)
+                    }
+                }
+            });
+
             await prisma.transaction.create({
                 data: {
                     montant: parseFloat(montant),
-                    exp: users_id,
+                    users_transaction_expTousers: {
+                        connect: {
+                            id: users_id
+                        }
+                    },
                     type: {
                         connectOrCreate: {
                             where: { libelle: 'CONTRIBUTION_CAGNOTTE' },
@@ -138,7 +236,7 @@ class CagnotteController {
 
             return res.status(200).json(
                 instance.formatResponse(
-                    updatedCagnotte,
+                    this.sanitizeCagnotteData(updatedCagnotte, users_id),
                     "Contribution effectuée avec succès",
                     200,
                     null
@@ -159,6 +257,22 @@ class CagnotteController {
 
     static async getAllCagnottes(req, res) {
         try {
+            const token = req.cookies.token;
+            
+            if (!token) {
+                return res.status(401).json(
+                    instance.formatResponse(
+                        null,
+                        "Authentification requise",
+                        401,
+                        "AUTH_ERROR"
+                    )
+                );
+            }
+
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            const users_id = decoded.userId;
+
             const cagnottes = await prisma.cagnotte.findMany({
                 include: {
                     users_cagnotte: {
@@ -169,9 +283,13 @@ class CagnotteController {
                 }
             });
 
+            const sanitizedCagnottes = cagnottes.map(cagnotte => 
+                this.sanitizeCagnotteData(cagnotte, users_id)
+            );
+
             return res.status(200).json(
                 instance.formatResponse(
-                    cagnottes,
+                    sanitizedCagnottes,
                     "Cagnottes récupérées avec succès",
                     200,
                     null
@@ -192,6 +310,22 @@ class CagnotteController {
 
     static async getCagnotteById(req, res) {
         try {
+            const token = req.cookies.token;
+            
+            if (!token) {
+                return res.status(401).json(
+                    instance.formatResponse(
+                        null,
+                        "Authentification requise",
+                        401,
+                        "AUTH_ERROR"
+                    )
+                );
+            }
+
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            const users_id = decoded.userId;
+
             const { id } = req.params;
             const cagnotte = await prisma.cagnotte.findUnique({
                 where: { id: parseInt(id) },
@@ -217,7 +351,7 @@ class CagnotteController {
 
             return res.status(200).json(
                 instance.formatResponse(
-                    cagnotte,
+                    this.sanitizeCagnotteData(cagnotte, users_id),
                     "Cagnotte récupérée avec succès",
                     200,
                     null

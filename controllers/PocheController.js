@@ -1,6 +1,7 @@
-// controllers/PocheController.js
 import instance from "../utils/ResponseFormatter.js";
 import { PrismaClient } from '@prisma/client';
+import jwt from 'jsonwebtoken';
+
 const prisma = new PrismaClient();
 
 class PocheController {
@@ -12,10 +13,59 @@ class PocheController {
         URGENCE: 'URGENCE'         // Poche pour les urgences
     };
 
+    // Fonction utilitaire pour vérifier le propriétaire
+    static async verifyPocheOwner(pocheId, userId) {
+        const poche = await prisma.poche.findUnique({
+            where: { id: parseInt(pocheId) }
+        });
+        return poche && poche.users_id === userId;
+    }
+
+    // Fonction utilitaire pour masquer les informations sensibles
+    static sanitizePocheData(poche, userId) {
+        if (!poche) return null;
+        
+        const isOwner = poche.users_id === userId;
+        
+        if (!isOwner) {
+            return null; // On ne renvoie rien si ce n'est pas le propriétaire
+        }
+
+        return {
+            id: poche.id,
+            montant: poche.montant,
+            type: poche.type,
+            date_limite: poche.date_limite,
+            users_poche: poche.users_poche?.map(up => ({
+                users_id: up.users_id,
+                users: {
+                    id: up.users.id,
+                    nom: up.users.nom,
+                    prenom: up.users.prenom
+                }
+            }))
+        };
+    }
+
     static async createPoche(req, res) {
         try {
+            const token = req.cookies.token;
+            
+            if (!token) {
+                return res.status(401).json(
+                    instance.formatResponse(
+                        null,
+                        "Authentification requise",
+                        401,
+                        "AUTH_ERROR"
+                    )
+                );
+            }
+
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            const users_id = decoded.userId;
+
             const { montant, type, date_limite, nom } = req.body;
-            const users_id = 1; // À remplacer par l'ID de l'utilisateur authentifié
 
             // Validation du type de poche
             if (!Object.values(PocheController.TYPES_POCHE).includes(type)) {
@@ -47,7 +97,6 @@ class PocheController {
 
             // Créer la poche
             const nouvellePoche = await prisma.$transaction(async (prisma) => {
-                // Créer la poche
                 const poche = await prisma.poche.create({
                     data: {
                         users_id,
@@ -59,10 +108,16 @@ class PocheController {
                                 users_id
                             }
                         }
+                    },
+                    include: {
+                        users_poche: {
+                            include: {
+                                users: true
+                            }
+                        }
                     }
                 });
 
-                // Mettre à jour le solde de l'utilisateur
                 await prisma.users.update({
                     where: { id: users_id },
                     data: {
@@ -77,7 +132,7 @@ class PocheController {
 
             return res.status(201).json(
                 instance.formatResponse(
-                    nouvellePoche,
+                    this.sanitizePocheData(nouvellePoche, users_id),
                     "Poche créée avec succès",
                     201,
                     null
@@ -98,15 +153,39 @@ class PocheController {
 
     static async transferFromPoche(req, res) {
         try {
+            const token = req.cookies.token;
+            
+            if (!token) {
+                return res.status(401).json(
+                    instance.formatResponse(
+                        null,
+                        "Authentification requise",
+                        401,
+                        "AUTH_ERROR"
+                    )
+                );
+            }
+
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            const users_id = decoded.userId;
+
             const { montant, destinataire_id, poche_id } = req.body;
-            const users_id = 1; // À remplacer par l'ID de l'utilisateur authentifié
+
+            // Vérifier que l'utilisateur est propriétaire de la poche
+            if (!(await this.verifyPocheOwner(poche_id, users_id))) {
+                return res.status(403).json(
+                    instance.formatResponse(
+                        null,
+                        "Accès non autorisé à cette poche",
+                        403,
+                        "UNAUTHORIZED_ACCESS"
+                    )
+                );
+            }
 
             // Vérifier la poche
             const poche = await prisma.poche.findUnique({
-                where: { 
-                    id: parseInt(poche_id),
-                    users_id
-                }
+                where: { id: parseInt(poche_id) }
             });
 
             if (!poche) {
@@ -148,17 +227,22 @@ class PocheController {
 
             // Effectuer le transfert
             const transaction = await prisma.$transaction(async (prisma) => {
-                // Mettre à jour la poche
                 const pocheUpdated = await prisma.poche.update({
                     where: { id: poche_id },
                     data: {
                         montant: {
                             decrement: parseFloat(montant)
                         }
+                    },
+                    include: {
+                        users_poche: {
+                            include: {
+                                users: true
+                            }
+                        }
                     }
                 });
 
-                // Mettre à jour le solde du destinataire
                 const destinataireUpdated = await prisma.users.update({
                     where: { id: parseInt(destinataire_id) },
                     data: {
@@ -168,7 +252,6 @@ class PocheController {
                     }
                 });
 
-                // Créer la transaction
                 const newTransaction = await prisma.transaction.create({
                     data: {
                         montant: parseFloat(montant),
@@ -189,7 +272,10 @@ class PocheController {
                     }
                 });
 
-                return { pocheUpdated, destinataireUpdated, newTransaction };
+                return { 
+                    poche: this.sanitizePocheData(pocheUpdated, users_id),
+                    transaction: newTransaction
+                };
             });
 
             return res.status(200).json(
@@ -215,15 +301,39 @@ class PocheController {
 
     static async updatePoche(req, res) {
         try {
+            const token = req.cookies.token;
+            
+            if (!token) {
+                return res.status(401).json(
+                    instance.formatResponse(
+                        null,
+                        "Authentification requise",
+                        401,
+                        "AUTH_ERROR"
+                    )
+                );
+            }
+
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            const users_id = decoded.userId;
+
             const { poche_id } = req.params;
             const { nouvelle_date_limite, nouveau_montant } = req.body;
-            const users_id = 1; // À remplacer par l'ID de l'utilisateur authentifié
+
+            // Vérifier que l'utilisateur est propriétaire de la poche
+            if (!(await this.verifyPocheOwner(poche_id, users_id))) {
+                return res.status(403).json(
+                    instance.formatResponse(
+                        null,
+                        "Accès non autorisé à cette poche",
+                        403,
+                        "UNAUTHORIZED_ACCESS"
+                    )
+                );
+            }
 
             const poche = await prisma.poche.findUnique({
-                where: { 
-                    id: parseInt(poche_id),
-                    users_id
-                }
+                where: { id: parseInt(poche_id) }
             });
 
             if (!poche) {
@@ -262,12 +372,19 @@ class PocheController {
 
             const pocheUpdated = await prisma.poche.update({
                 where: { id: parseInt(poche_id) },
-                data: updateData
+                data: updateData,
+                include: {
+                    users_poche: {
+                        include: {
+                            users: true
+                        }
+                    }
+                }
             });
 
             return res.status(200).json(
                 instance.formatResponse(
-                    pocheUpdated,
+                    this.sanitizePocheData(pocheUpdated, users_id),
                     "Poche mise à jour avec succès",
                     200,
                     null
@@ -288,8 +405,22 @@ class PocheController {
 
     static async getAllPoches(req, res) {
         try {
-            const users_id = 1; // À remplacer par l'ID de l'utilisateur authentifié
-
+            const token = req.cookies.token;
+    
+            if (!token) {
+                return res.status(401).json(
+                    instance.formatResponse(
+                        null,
+                        "Authentification requise",
+                        401,
+                        "AUTH_ERROR"
+                    )
+                );
+            }
+    
+            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            const users_id = decoded.userId;
+    
             const poches = await prisma.poche.findMany({
                 where: { users_id },
                 include: {
@@ -300,10 +431,15 @@ class PocheController {
                     }
                 }
             });
-
+    
+            // Assurez-vous que this est correct ici
+            const sanitizedPoches = poches.map(poche => 
+                PocheController.sanitizePocheData(poche, users_id) // Utiliser le nom de la classe ici
+            );
+    
             return res.status(200).json(
                 instance.formatResponse(
-                    poches,
+                    sanitizedPoches,
                     "Poches récupérées avec succès",
                     200,
                     null
@@ -321,6 +457,7 @@ class PocheController {
             );
         }
     }
+    
 }
 
 export default PocheController;
