@@ -85,6 +85,8 @@ router.route('/depot')
 
 router.route('/retrait')
   .post(auth, (req, res) => TransactionController.retrait(req, res));
+  router.post('/calculate-frais', auth, (req, res) => TransactionController.calculateurFrais(req, res));
+
 
 router.route('/user/create')
   .post((req, res) => UserController.create(req, res));
@@ -94,9 +96,14 @@ router.route('/login')
 
 router.route('/logout')
   .post((req, res) => UserController.logout(req, res));
+  router.get('/user/:id', auth, (req, res) => UserController.getById(req, res));
+
+// Mettre à jour les informations d'un utilisateur par ID
+router.put('/user/:id', auth, (req, res) => UserController.update(req, res));
 
 router.route('/reinitializeCode')
   .post(auth, (req, res) => UserController.reinitializeCode(req, res));
+
 
 router.route('/transferer')
   .post(auth, (req, res) => TransactionController.transfert(req, res));
@@ -122,7 +129,9 @@ router.route('/cadeau/assigner').post(auth, (req, res) => GestionCadeau.assignCa
 
  
 //endpoint qui permet de lister les user par rang selon de nombre de trensactions faites 
-router.get('/user/ranking', (req, res) => ClassementController.getRanking(req, res));
+router.route('/user/ranking').get(auth, (req, res) => ClassementController.getRanking(req, res));
+
+router.route('/payment/bulk').post(auth, (req, res) => PaymentController.makeBulkPayment(req, res));
 
 router.route('/users/reportIssue')
 .post(auth, (req, res) => UserController.reportIssue(req, res));
@@ -146,6 +155,14 @@ router.post('/bill-payment', (req, res) => BillPaymentController.payBill(req, re
 //endpoint pour verouiller la carte en cas de perte
 router.post('/card/lock', (req, res) => CardController.lockCard(req, res));
 
+router.route('/user/stats')
+  .get(auth, (req, res) => UserController.getStatistiques(req, res));
+
+router.route('/user/link-bank')
+  .post(auth, (req, res) => UserController.linkToBankAccount(req, res));
+
+router.route('/user/bank-account')
+  .get(auth, (req, res) => UserController.getBankAccount(req, res));
 
 // Export the router
 export default router;

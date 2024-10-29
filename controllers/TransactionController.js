@@ -4,6 +4,42 @@ import instance from "../utils/ResponseFormatter.js";
 class TransactionController {
 
 static repository = new Repository("transaction");
+static async calculateurFrais(req, res) {
+  try {
+    // Récupérer le montant depuis le corps de la requête
+    const { montant } = req.body;
+
+    if (!montant) {
+      return res.status(400).json({ message: "Montant est obligatoire" });
+    }
+
+    // Calcul des frais
+    const pourcentageFrais = 0.01; // 2% de frais
+    const montantMinFrais = 100; // Frais minimum de 100
+    let frais = montant * pourcentageFrais;
+
+    // Si les frais calculés sont inférieurs aux frais minimums
+    if (frais < montantMinFrais) {
+      frais = montantMinFrais;
+    }
+
+    // Retourner la réponse
+    return res.status(200).json({
+      message: "Calcul des frais réussi",
+      data: {
+        montant,
+        frais,
+      },
+    });
+  } catch (error) {
+    console.error("Erreur lors du calcul des frais:", error);
+    return res.status(500).json({
+      message: "Erreur serveur lors du calcul des frais",
+      error: error.message,
+    });
+  }
+}
+
 
   static async getByUserId(req, res) {
     const userId = parseInt(req.params.id);
@@ -96,8 +132,7 @@ static repository = new Repository("transaction");
         if (date) dateFilter.created_at.gte = new Date(date);
       }
 
-      const transactions =
-        await TransactionController.repository.prisma.transaction.findMany({
+      const transactions = await TransactionController.repository.prisma.transaction.findMany({
           where: {
             AND: [
               dateFilter, // Filtre de date
