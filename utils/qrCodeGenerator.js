@@ -16,7 +16,7 @@ export async function generateQRCode(user) {
     const qrDir = path.join(process.cwd(), 'public/qrcodes');
     const tempQrPath = path.join(qrDir, `qr_${user.id}.png`);
 
-    try {
+    try {your_api_secret
         // Créer le répertoire si nécessaire
         if (!fs.existsSync(qrDir)) {
             fs.mkdirSync(qrDir, { recursive: true });
