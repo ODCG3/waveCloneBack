@@ -9,7 +9,7 @@ import cagnotteRouter from './routes/cagnotte.js';  // Nouvelle import
 // Import routers
 import creditRouter from './routes/credit.js';
 import pocheRouter from './routes/poche.js';
-
+import cors from 'cors';
 import indexRouter from "./routes/index.js"; // Make sure to include `.js`
 import usersRouter from "./routes/users.js"; // Incl
 import transactionRouter from "./routes/transactions.js";

@@ -96,7 +96,7 @@ router.route("/login").post((req, res) => UserController.login(req, res));
 
 router.route('/logout')
   .post((req, res) => UserController.logout(req, res));
-  router.get('/user/:id', auth, (req, res) => UserController.getById(req, res));
+  router.get('/user/get/:id', auth, (req, res) => UserController.getById(req, res));
 
 // Mettre à jour les informations d'un utilisateur par ID
 router.put('/user/:id', auth, (req, res) => UserController.update(req, res));
