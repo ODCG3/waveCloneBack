@@ -122,11 +122,10 @@ router
   .route("/bill-payment")
   .post(auth, (req, res) => BillPaymentController.payBill(req, res));
 
-//endpoint pour verouiller la carte en cas de perte
-router
-  .route("/card/lock")
-  .post(auth, (req, res) => CardController.lockCard(req, res));
-router.get("/users", (req, res) => UserController.getAll(req, res));
+
+router.route('/card/lock').post(auth, (req, res) => CardController.lockCard(req, res));
+router.route('/users').get(auth,(req, res) => UserController.getAll(req, res));
+
 
 router
   .route("/cadeau/assigner")
@@ -147,7 +146,8 @@ router
   .route("/admin/respondIssue")
   .post(auth, (req, res) => UserController.respondToIssueInApp(req, res));
 
-router.get("/users", (req, res) => UserController.getAll(req, res));
+//router.get('/users', (req, res) => UserController.getAll(req, res));
+
 
 router.get("/example", (req, res) => UserController.getAll(req, res));
 

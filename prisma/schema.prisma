@@ -119,9 +119,9 @@ model users {
   telephone                                   String                   @unique @db.VarChar(20)
   email                                       String                   @unique @db.VarChar(100)
   solde                                       Decimal?                 @db.Decimal(10, 2)
-  code                                        String?                  @db.VarChar(50)
+  code                                        String?                  @db.Text
   promo                                       Decimal?                 @db.Decimal(5, 2)
-  carte                                       String?                  @db.VarChar(50)
+  carte                                       String?                  @db.Text
   etatcarte                                   Boolean?
   role_id                                     Int?
   bankaccount                                 bankaccount[]

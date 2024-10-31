@@ -170,6 +170,15 @@ class UserController {
         .json({ error: "Numéro de téléphone est obligatoire" });
     }
 
+
+    static async getAll(res) {
+        console.log(this.repository);
+
+        const users = await this.usersRepository.getAll();
+        const status = users ? 200 : 404;
+        const message = users ? 'Users retrieved successfully' : 'Error retrieving users';
+        res.status(status).json(instance.formatResponse(users, message, status, null));
+
     if (!code) {
       return res.status(400).json({ error: "Code est obligatoire" });
     }
@@ -177,6 +186,7 @@ class UserController {
     const user = await this.repository.prisma.users.findFirst({
       where: { telephone: telephone },
     });
+
 
     if (!user) {
       return res.status(404).json({ error: "User not found" });
@@ -213,14 +223,47 @@ class UserController {
       // Créer une copie de l'objet utilisateur sans le champ `code`
       const { code, ...userWithoutCode } = user;
 
-      const message = 'User retrieved successfully';
-      res.status(200).json(instance.formatResponse(userWithoutCode, message, 200, null));
+
+   static async getById(req, res) {
+    try {
+        // Convertir req.params.id en entier
+        const id = parseInt(req.params.id, 10);
+       //console.log(req.params.id);
+        
+        if (isNaN(id)) {
+            return res.status(400).json({ error: 'Invalid user ID' });
+        }
+
+        const user = await this.repository.getById(id);
+        
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Créer une copie de l'objet utilisateur sans le champ `code`
+        const { code, ...userWithoutCode } = user;
+
+        const message = 'User retrieved successfully';
+        res.status(200).json(instance.formatResponse(userWithoutCode, message, 200, null));
+
     } catch (error) {
       // Gérer les erreurs éventuelles
       res.status(500).json({ error: 'An error occurred while retrieving the user' });
     }
   }
 
+
+
+    
+
+    static async update(req, res) {
+        const user = await this.repository.update(parseInt(req.params.id, 10), req.body);
+        const status = user ? 201 : 404;
+
+        if (!user) return res.status(404).json({ error: 'User not found' });
+        const message = user ? 'User updated successfully' : 'Error updating user';
+
+        res.status(status).json(instance.formatResponse(user, message, status, null));
 
   static async getBankAccount(req, res) {
     const id = req.user.userId;
@@ -229,6 +272,7 @@ class UserController {
     })
     if (!user) {
       return res.status(404).json({ message: "User not found" });
+
     }
     const bankAccount = await this.repository.prisma.bankaccount.findMany({
       where: { users_id: id }
@@ -338,6 +382,39 @@ class UserController {
       console.error("Erreur serveur:", error);
       res.status(500).json({ message: "Erreur serveur", error: error.message });
     }
+
+
+    // Méthode pour signaler un problème
+    static async reportIssue(req, res) {
+        try {
+            const userId = req.user.userId;
+            console.log("user :", req.user);
+
+           console.log("id :", userId);
+
+            const { message } = req.body;
+
+            // Sauvegarder l'issue dans la base de données
+            const issueRepo = new Repository("issues");
+            const issue = await issueRepo.create({ users_id: userId, message });
+
+            // Récupérer les informations de l'utilisateur
+            const userRepo = new Repository("users");
+            const user = await userRepo.getById(userId);
+
+            // Envoi d'un e-mail à l'administrateur
+            await EmailService.sendMail(
+                process.env.ADMIN_SUPPORT_EMAIL,
+                'Nouvelle demande de support utilisateur',
+                `L'utilisateur ${user.prenom} ${user.nom} a signalé un problème : ${message}`
+            );
+
+            res.status(201).json(instance.formatResponse(issue, 'Problème signalé avec succès', 201, null));
+        } catch (error) {
+            console.error('Erreur:', error);
+            res.status(500).json(instance.formatResponse(null, 'Erreur lors du signalement du problème', 500, error.message));
+        }
+
   }
 
   static async linkToBankAccount(req, res) {
@@ -366,6 +443,7 @@ class UserController {
     const dateValidationArray = dateValidationFormat.map(Number);
     if (dateValidationArray[0] > 12 || dateValidationArray[1] > 31 || dateValidationArray[0] < 1 || dateValidationArray[1] < 1) {
       return res.status(400).json({ message: "La date de validation est incorrecte" });
+
     }
 
     if (cvv.toString().length !== 3) {
@@ -535,6 +613,30 @@ class UserController {
       return res.status(400).json({ message: "Non connecté" });
     }
 
+
+    static async getBankAccount(req, res) {
+        const id = req.user.userId;
+        const user = await this.repository.prisma.users.findFirst({
+            where: { id }
+        })
+
+        console.log(user);
+        
+
+        if(!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        const bankAccount = await this.repository.prisma.bankaccount.findMany({
+            where: { users_id: id }
+        })
+
+        const status = bankAccount ? 200 : 404;
+        const message = bankAccount ? 'Compte retrouvé avec succès' : 'Erreur lors de la récupération du compte';
+        const data = bankAccount? bankAccount : null;
+
+        return res.status(status).json(instance.formatResponse(data, message, status, null));
+
     const { code_promo } = req.body;
     const userRepository = new Repository("users");
     const promoRepository = new Repository("code_promo");
@@ -585,6 +687,7 @@ class UserController {
     } catch (error) {
       console.error("Erreur serveur:", error);
       res.status(500).json({ message: "Erreur serveur", error: error.message });
+
     }
   }
 }
