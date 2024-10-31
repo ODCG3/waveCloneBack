@@ -96,7 +96,7 @@ router.route('/login')
 
 router.route('/logout')
   .post((req, res) => UserController.logout(req, res));
-  router.get('/user/:id', auth, (req, res) => UserController.getById(req, res));
+  router.get('/user/get/:id', auth, (req, res) => UserController.getById(req, res));
 
 // Mettre à jour les informations d'un utilisateur par ID
 router.put('/user/:id', auth, (req, res) => UserController.update(req, res));
@@ -123,7 +123,7 @@ router.route('/bill-payment').post(auth, (req, res) => BillPaymentController.pay
 
 //endpoint pour verouiller la carte en cas de perte
 router.route('/card/lock').post(auth, (req, res) => CardController.lockCard(req, res));
-router.get('/users', (req, res) => UserController.getAll(req, res));
+router.route('/users').get(auth,(req, res) => UserController.getAll(req, res));
 
 router.route('/cadeau/assigner').post(auth, (req, res) => GestionCadeau.assignCadeau(req, res));
 
@@ -139,7 +139,7 @@ router.route('/users/reportIssue')
 router.route('/admin/respondIssue')
 .post(auth, (req, res) => UserController.respondToIssueInApp(req, res));
 
-router.get('/users', (req, res) => UserController.getAll(req, res));
+//router.get('/users', (req, res) => UserController.getAll(req, res));
 
 
 router.get('/example', (req,res) => UserController.getAll(req,res));

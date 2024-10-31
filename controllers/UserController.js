@@ -137,10 +137,10 @@ class UserController {
     }
 
 
-    static async getAll(req, res) {
+    static async getAll(res) {
         console.log(this.repository);
 
-        const users = await this.repository.getAll();
+        const users = await this.usersRepository.getAll();
         const status = users ? 200 : 404;
         const message = users ? 'Users retrieved successfully' : 'Error retrieving users';
         res.status(status).json(instance.formatResponse(users, message, status, null));
@@ -182,6 +182,7 @@ class UserController {
     try {
         // Convertir req.params.id en entier
         const id = parseInt(req.params.id, 10);
+       //console.log(req.params.id);
         
         if (isNaN(id)) {
             return res.status(400).json({ error: 'Invalid user ID' });
@@ -208,7 +209,7 @@ class UserController {
     
 
     static async update(req, res) {
-        const user = await this.repository.update(req.params.id, req.body);
+        const user = await this.repository.update(parseInt(req.params.id, 10), req.body);
         const status = user ? 201 : 404;
 
         if (!user) return res.status(404).json({ error: 'User not found' });
@@ -233,7 +234,7 @@ class UserController {
             const userId = req.user.userId;
             console.log("user :", req.user);
 
-            console.log("id :", userId);
+           console.log("id :", userId);
 
             const { message } = req.body;
 
@@ -503,10 +504,12 @@ class UserController {
 
     static async getBankAccount(req, res) {
         const id = req.user.userId;
-
         const user = await this.repository.prisma.users.findFirst({
             where: { id }
         })
+
+        console.log(user);
+        
 
         if(!user) {
             return res.status(404).json({ message: "User not found" });
@@ -520,7 +523,7 @@ class UserController {
         const message = bankAccount ? 'Compte retrouvé avec succès' : 'Erreur lors de la récupération du compte';
         const data = bankAccount? bankAccount : null;
 
-        res.status(status).json(instance.formatResponse(data, message, status, null));
+        return res.status(status).json(instance.formatResponse(data, message, status, null));
     }
 
 }
