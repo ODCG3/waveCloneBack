@@ -43,9 +43,9 @@ router.delete('/promos/:id', PromoController.delete); // Supprimer une promotion
 // Route pour créer une notification
 router.post('/', NotificationsController.createNotification);
 // Route pour récupérer toutes les notifications d'un utilisateur
-router.get('/:usersId', NotificationsController.getUserNotifications);
+router.get('user/:usersId', NotificationsController.getUserNotifications);
 // Route pour mettre à jour l'état d'une notification
-router.put('/:notificationId', NotificationsController.updateNotificationStatus);
+router.put('user/:notificationId', NotificationsController.updateNotificationStatus);
 
 // test 
 router.post('/test-notifications', TestNotificationController.testNotifications);
@@ -73,9 +73,9 @@ router.delete('/promos/:id', PromoController.delete); // Supprimer une promotion
 // Route pour créer une notification
 router.post('/', NotificationsController.createNotification);
 // Route pour récupérer toutes les notifications d'un utilisateur
-router.get('/:usersId', NotificationsController.getUserNotifications);
+router.get('user/:usersId', NotificationsController.getUserNotifications);
 // Route pour mettre à jour l'état d'une notification
-router.put('/:notificationId', NotificationsController.updateNotificationStatus);
+router.put('user/:notificationId', NotificationsController.updateNotificationStatus);
 
 // test 
 router.post('/test-notifications', TestNotificationController.testNotifications);
