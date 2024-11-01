@@ -99,6 +99,7 @@ model transaction {
   agent                                 Int?
   exp                                   Int?
   type_id                               Int?
+  Date                                  DateTime?           @default(now())
   users_transaction_agentTousers        users?              @relation("transaction_agentTousers", fields: [agent], references: [id], onDelete: NoAction, onUpdate: NoAction)
   users_transaction_destinataireTousers users?              @relation("transaction_destinataireTousers", fields: [destinataire], references: [id], onDelete: NoAction, onUpdate: NoAction)
   users_transaction_expTousers          users?              @relation("transaction_expTousers", fields: [exp], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -121,7 +122,7 @@ model users {
   solde                                       Decimal?                 @db.Decimal(10, 2)
   code                                        String?                  @db.VarChar(50)
   promo                                       Decimal?                 @db.Decimal(5, 2)
-  carte                                       String?                  @db.VarChar(50)
+  carte                                       String?
   etatcarte                                   Boolean?
   role_id                                     Int?
   bankaccount                                 bankaccount[]

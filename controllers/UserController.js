@@ -96,7 +96,11 @@ class UserController {
   }
 
   static async login(req, res) {
-    const numero = req.body.numero;
+    const numero = req.body.numero.replace(/\s+/g, '');
+
+// const cleanedNumber = phoneNumber.replace(/\s+/g, '');
+    console.log(numero);
+    
 
     if (!numero) {
       return res
