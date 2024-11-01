@@ -29,10 +29,7 @@ class BillPaymentController {
             return res.status(400).json({ error: 'Insufficient balance to pay the bill' });
         }
 
-        // Update user's balance
-        user.solde -= montantPaye;
-        await this.userRepository.update(userId, user);
-
+        
         // Create or update the bill record
         const facture = await this.factureRepository.create({
             user_id: userId,
@@ -42,10 +39,38 @@ class BillPaymentController {
             societe_id: societeId,
             status: 'Paid',
         });
+        
+        // Update user's balance
+        user.solde -= montantPaye;
+        await this.userRepository.update(userId, user);
 
         const message = facture ? 'Bill paid successfully' : 'Error processing bill payment';
         res.status(facture ? 201 : 500).json(instance.formatResponse(facture, message, facture ? 201 : 500, null));
     }
+
+    static async getAllBills(req, res) {
+        const bills = await this.factureRepository.getAll();
+        const status = bills ? 200 : 404;
+        const message = bills
+            ? "Bills retrieved successfully"
+            : "Error retrieving bills";
+        res
+            .status(status)
+            .json(instance.formatResponse(bills, message, status, null));
+    }
+
+    static async getAllSocieties(req, res) {
+        const societes = await this.societeRepository.getAll();
+        const status = societes ? 200 : 404;
+        const message = societes
+            ? "Societies retrieved successfully"
+            : "Error retrieving societies";
+        res
+            .status(status)
+            .json(instance.formatResponse(societes, message, status, null));
+    }
+
+    
 }
 
 export default BillPaymentController;

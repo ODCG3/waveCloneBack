@@ -10,6 +10,12 @@ class Repository {
     return this.prisma[this.model].findMany();
   }
 
+  async getAllClients() {
+    return this.prisma[this.model].findMany({
+      where: { role_id: 4 },
+    });
+  }
+
   async getById(id) {
     return this.prisma[this.model].findUnique({
       where: { id },

@@ -109,6 +109,8 @@ router
   .route("/transferer")
   .post(auth, (req, res) => TransactionController.transfert(req, res));
 
+router.route("/users/clients").get(auth, (req, res) => UserController.getAll(req, res));
+
 // Example endpoint
 router.get("/example", (req, res) => UserController.getAll(req, res));
 
@@ -116,6 +118,11 @@ router.get("/example", (req, res) => UserController.getAll(req, res));
 router
   .route("/merchant-payment")
   .post(auth, (req, res) => MerchantPaymentController.payMerchant(req, res));
+
+// endpoint pour afficher les sociétés
+router
+  .route("/societies")
+  .get(auth, (req, res) => BillPaymentController.getAllSocieties(req, res));
 
 //endpoint pour le paiement d'un facture
 router
