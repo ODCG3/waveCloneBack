@@ -1,5 +1,8 @@
 import Repository from "../Database/Repository.js";
 import instance from "../utils/ResponseFormatter.js";
+import NotificationsRepository from "../Database/repositories/NotificationsRepository.js";
+
+const notificationsRepository = new NotificationsRepository();
 
 class TransactionController {
 
@@ -361,6 +364,14 @@ static async calculateurFrais(req, res) {
               connect: { id: 1 }, // Connects type relation
             },
           },
+        });
+
+        // Envoyer une notification après le paiement
+        const notificationMessage = `Vous avez reçu ${montant} FCFA de ${user.nom} ${user.prenom} (${user.telephone}). Nouveau solde : ${user.solde} FCFA`;
+        const notification = await notificationsRepository.createNotification({
+            usersId: receiver.id,
+            message: notificationMessage,
+            etat: false
         });
 
         // Mise à jour des messages de succès

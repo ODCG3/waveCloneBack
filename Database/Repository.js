@@ -53,6 +53,12 @@ class Repository {
       ...(include && { include }),
     });
   }
+
+  async getAllByUserId(userId) {
+    return this.prisma[this.model].findMany({
+      where: { user_id: userId }, // Assuming `user_id` is the foreign key column in your `facture` table
+    });
+  }
 }
 
 
