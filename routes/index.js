@@ -41,11 +41,12 @@ router.delete('/promos/:id', PromoController.delete); // Supprimer une promotion
 
 
 // Route pour créer une notification
-router.post('/', NotificationsController.createNotification);
+//router.post('/', NotificationsController.createNotification);
 // Route pour récupérer toutes les notifications d'un utilisateur
-router.get('user/:usersId', NotificationsController.getUserNotifications);
+router.route('/user/notifications/:usersId').get(auth, NotificationsController.getUserNotifications);
+router.route('/notifications/unread/:usersId').get(auth, NotificationsController.getUnreadUserNotifications);
 // Route pour mettre à jour l'état d'une notification
-router.put('user/:notificationId', NotificationsController.updateNotificationStatus);
+router.put('/user/:notificationId', NotificationsController.updateNotificationStatus);
 
 // test 
 router.post('/test-notifications', TestNotificationController.testNotifications);
@@ -70,15 +71,15 @@ router.put('/promos/:id', PromoController.update); // Mettre à jour une promoti
 router.delete('/promos/:id', PromoController.delete); // Supprimer une promotion
 
 
-// Route pour créer une notification
-router.post('/', NotificationsController.createNotification);
-// Route pour récupérer toutes les notifications d'un utilisateur
-router.get('user/:usersId', NotificationsController.getUserNotifications);
-// Route pour mettre à jour l'état d'une notification
-router.put('user/:notificationId', NotificationsController.updateNotificationStatus);
+// // Route pour créer une notification
+// router.post('/', NotificationsController.createNotification);
+// // Route pour récupérer toutes les notifications d'un utilisateur
+// router.get('user/:usersId', NotificationsController.getUserNotifications);
+// // Route pour mettre à jour l'état d'une notification
+// router.put('user/:notificationId', NotificationsController.updateNotificationStatus);
 
-// test 
-router.post('/test-notifications', TestNotificationController.testNotifications);
+// // test 
+// router.post('/test-notifications', TestNotificationController.testNotifications);
 
 router.route('/depot')
   .post(auth, (req, res) => TransactionController.depot(req, res));
@@ -109,6 +110,12 @@ router
   .route("/transferer")
   .post(auth, (req, res) => TransactionController.transfert(req, res));
 
+router.route("/users").get(auth, (req, res) => UserController.getAll(req, res));
+
+router
+  .route("/users/clients")
+  .get(auth, (req, res) => UserController.getAllClients(req, res));
+
 // Example endpoint
 router.get("/example", (req, res) => UserController.getAll(req, res));
 
@@ -116,6 +123,11 @@ router.get("/example", (req, res) => UserController.getAll(req, res));
 router
   .route("/merchant-payment")
   .post(auth, (req, res) => MerchantPaymentController.payMerchant(req, res));
+
+// endpoint pour afficher les sociétés
+router
+  .route("/societies")
+  .get(auth, (req, res) => BillPaymentController.getAllSocieties(req, res));
 
 //endpoint pour le paiement d'un facture
 router
@@ -161,6 +173,16 @@ router.post("/bill-payment", (req, res) =>
   BillPaymentController.payBill(req, res)
 );
 
+//endpoint pour afficher les sociétés
+router.route("/societies")
+.get(auth, (req, res) => BillPaymentController.getAllSocieties(req, res));
+
+// endpoint pour afficher les factures
+router.route("/factures").get(auth, (req, res) => BillPaymentController.getAllBills(req, res));
+
+// endpoint pour afficher les factures de l'utilisateur connecté
+router.route("/my-bills").get(auth, (req, res) => BillPaymentController.getMyBills(req, res));
+
 //endpoint pour verouiller la carte en cas de perte
 router.post("/card/lock", (req, res) => CardController.lockCard(req, res));
 
@@ -186,6 +208,11 @@ router
 router
   .route("/search")
   .get(auth, (req, res) => TransactionController.searchTransactions(req, res));
+
+//endpoint pour afficher les détails d'une transaction:
+router
+  .route("/transactions/:id")
+  .get(auth, (req, res) => TransactionController.getTransactionById(req, res));
 
 // Export the router
 export default router;

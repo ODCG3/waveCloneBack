@@ -1,5 +1,8 @@
 import Repository from "../Database/Repository.js";
 import instance from "../utils/ResponseFormatter.js";
+import NotificationsRepository from "../Database/repositories/NotificationsRepository.js";
+
+const notificationsRepository = new NotificationsRepository();
 
 class TransactionController {
 
@@ -78,6 +81,7 @@ static async calculateurFrais(req, res) {
                 nom: true,
                 prenom: true,
                 email: true,
+                telephone: true,
               },
             },
             users_transaction_agentTousers: {
@@ -92,6 +96,7 @@ static async calculateurFrais(req, res) {
                 nom: true,
                 prenom: true,
                 email: true,
+                telephone: true,
               },
             },
             users_transaction: {
@@ -119,6 +124,60 @@ static async calculateurFrais(req, res) {
     } catch (error) {
       console.error(error);
       res.status(500).json({ message: "Erreur Server" });
+    }
+  }
+
+  static async getTransactionById(req, res) {
+    const connectedClientID = req.user.userId;
+    if (!connectedClientID) {
+      return res.status(400).json({ message: "Non connecté" });
+    }
+    
+    const transactionId = parseInt(req.params.id);
+    if (isNaN(transactionId)) {
+      return res.status(400).json({ message: "Invalid transaction ID" });
+    }
+
+    try {
+      const transaction = await TransactionController.repository.prisma.transaction.findUnique({
+        where: { id: transactionId },
+        include: {
+          type: true,
+          users_transaction_destinataireTousers: {
+            select: {
+              nom: true,
+              prenom: true,
+              email: true,
+              telephone: true,
+            },
+          },
+          users_transaction_agentTousers: {
+            select: {
+              nom: true,
+              prenom: true,
+              email: true,
+            },
+          },
+          users_transaction_expTousers: {
+            select: {
+              nom: true,
+              prenom: true,
+              email: true,
+              telephone: true,
+            },
+          },
+        },
+      });
+
+      if (!transaction) {
+        return res.status(404).json({ message: "Transaction non trouvée" });
+      }
+
+      const message = "Transaction retrouvée avec succès";
+      res.status(200).json(instance.formatResponse(transaction, message, 200, null));
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Erreur serveur" });
     }
   }
 
@@ -305,6 +364,14 @@ static async calculateurFrais(req, res) {
               connect: { id: 1 }, // Connects type relation
             },
           },
+        });
+
+        // Envoyer une notification après le paiement
+        const notificationMessage = `Vous avez reçu ${montant} FCFA de ${user.nom} ${user.prenom} (${user.telephone}). Nouveau solde : ${user.solde} FCFA`;
+        const notification = await notificationsRepository.createNotification({
+            usersId: receiver.id,
+            message: notificationMessage,
+            etat: false
         });
 
         // Mise à jour des messages de succès

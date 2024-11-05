@@ -165,6 +165,18 @@ class UserController {
       .json(instance.formatResponse(users, message, status, null));
   }
 
+  //tous les utilisateurs avec le role client sauf l'utilisateur connecté (qui est le role client)
+  static async getAllClients(req, res) {
+    const users = await this.repository.getAllClients();
+    const status = users ? 200 : 404;
+    const message = users
+      ? "Users retrieved successfully"
+      : "Error retrieving users";
+    res
+      .status(status)
+      .json(instance.formatResponse(users, message, status, null));
+  }
+
   static async reinitializeCode(req, res) {
     const { telephone, code } = req.body;
 

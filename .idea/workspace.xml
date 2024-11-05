@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="55314de3-0a50-42b4-81b6-04650deaf458" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/Database/Repository.js" beforeDir="false" afterPath="$PROJECT_DIR$/Database/Repository.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Database/repositories/NotificationsRepository.js" beforeDir="false" afterPath="$PROJECT_DIR$/Database/repositories/NotificationsRepository.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app.js" beforeDir="false" afterPath="$PROJECT_DIR$/app.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/controllers/BillPaymentController.js" beforeDir="false" afterPath="$PROJECT_DIR$/controllers/BillPaymentController.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/controllers/CagnotteController.js" beforeDir="false" afterPath="$PROJECT_DIR$/controllers/CagnotteController.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/controllers/CreditController.js" beforeDir="false" afterPath="$PROJECT_DIR$/controllers/CreditController.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/controllers/NotificationsController.js" beforeDir="false" afterPath="$PROJECT_DIR$/controllers/NotificationsController.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/controllers/TransactionController.js" beforeDir="false" afterPath="$PROJECT_DIR$/controllers/TransactionController.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/prisma/schema.prisma" beforeDir="false" afterPath="$PROJECT_DIR$/prisma/schema.prisma" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/routes/cagnotte.js" beforeDir="false" afterPath="$PROJECT_DIR$/routes/cagnotte.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/routes/credit.js" beforeDir="false" afterPath="$PROJECT_DIR$/routes/credit.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/routes/index.js" beforeDir="false" afterPath="$PROJECT_DIR$/routes/index.js" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
+  "lastFilter": {
+    "state": "OPEN",
+    "assignee": "ZahraThiaw"
+  }
+}]]></component>
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/ODCG3/waveCloneBack.git",
+    "accountId": "446cc01e-3894-4f50-b884-5c58750d3295"
+  }
+}]]></component>
+  <component name="ProjectColorInfo"><![CDATA[{
+  "customColor": "",
+  "associatedIndex": 3
+}]]></component>
+  <component name="ProjectId" id="2oQGFW9inR7mOW7iMkmtBGUZdjz" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "git-widget-placeholder": "#44 on fatima",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "/home/fatimata/Documents",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-jdk-9823dce3aa75-28b599e66164-intellij.indexing.shared.core-IU-242.22855.74" />
+        <option value="bundled-js-predefined-d6986cc7102b-5c90d61e3bab-JavaScript-IU-242.22855.74" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="55314de3-0a50-42b4-81b6-04650deaf458" name="Changes" comment="" />
+      <created>1730794285066</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1730794285066</updated>
+      <workItem from="1730794289670" duration="1353000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+</project>

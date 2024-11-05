@@ -24,10 +24,22 @@ class NotificationsRepository extends Repository {
         });
     }
 
+    // Récupérer uniquement les notifications non lues d'un utilisateur
+    async getUnreadNotifications(usersId) {
+        return await this.prisma.notification.findMany({
+            where: {
+                users_id: usersId,
+                etat: false, // Filtre pour les notifications non lues
+            },
+            orderBy: { id: 'desc' },
+        });
+    }
+
     // Mettre à jour l'état d'une notification
     async updateNotificationStatus(notificationId, etat) {
         return await this.update(notificationId, { etat }); // Utilise la méthode update de la classe parent
     }
+
 }
 
 export default NotificationsRepository;

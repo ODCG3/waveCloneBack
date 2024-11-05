@@ -4,15 +4,14 @@ import Repository from "../Database/Repository.js";
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
-
-
 class CagnotteController {
     static repository = new Repository("cagnotte");
 
     static async create(req, res) {
         try {
-            const { montant_objectif } = req.body;
-            const users_id = 1; // ID fixe pour le moment
+            const { nom, montant_objectif } = req.body;
+            //const users_id = req.userId || 1; // Utilisation de l'ID de l'utilisateur authentifié si disponible
+            const users_id = req.user.userId;
 
             // Validation
             if (!montant_objectif || montant_objectif <= 0) {
@@ -29,9 +28,11 @@ class CagnotteController {
             // Créer la cagnotte
             const nouvelleCagnotte = await prisma.cagnotte.create({
                 data: {
+                    nom: nom,
                     users_id: users_id,
                     montant: 0,
                     montant_objectif: parseFloat(montant_objectif),
+                    etat: false, // Etat par défaut à false (cagnotte ouverte)
                     users_cagnotte: {
                         create: {
                             users_id: users_id
@@ -68,8 +69,19 @@ class CagnotteController {
         try {
             const { montant } = req.body;
             const { cagnotteId } = req.params;
-            const users_id = 1; // ID fixe pour le moment
-
+            const users_id = req.user.userId;
+    
+            if (!cagnotteId) {
+                return res.status(400).json(
+                    instance.formatResponse(
+                        null,
+                        "L'id de la cagnotte est obligatoire",
+                        400,
+                        "VALIDATION_ERROR"
+                    )
+                );
+            }
+    
             // Validation
             if (!montant || montant <= 0) {
                 return res.status(400).json(
@@ -81,12 +93,12 @@ class CagnotteController {
                     )
                 );
             }
-
-            // Vérifier si la cagnotte existe
+    
+            // Vérifier si la cagnotte existe et est ouverte
             const cagnotte = await prisma.cagnotte.findUnique({
                 where: { id: parseInt(cagnotteId) }
             });
-
+    
             if (!cagnotte) {
                 return res.status(404).json(
                     instance.formatResponse(
@@ -97,48 +109,41 @@ class CagnotteController {
                     )
                 );
             }
-
-            // Mettre à jour le montant de la cagnotte
+    
+            if (cagnotte.etat) {
+                return res.status(400).json(
+                    instance.formatResponse(
+                        null,
+                        "La cagnotte est fermée aux contributions",
+                        400,
+                        "CLOSED_CAGNOTTE"
+                    )
+                );
+            }
+    
+            // Créer une nouvelle transaction pour la contribution
+            const transaction = await prisma.transaction.create({
+                data: {
+                    montant: parseFloat(montant),
+                    exp: users_id,
+                    type_id: 4,
+                    Date: new Date()
+                }
+            });
+    
+            // Mettre à jour le montant total de la cagnotte
             const updatedCagnotte = await prisma.cagnotte.update({
                 where: { id: parseInt(cagnotteId) },
                 data: {
                     montant: {
                         increment: parseFloat(montant)
-                    },
-                    users_cagnotte: {
-                        create: {
-                            users_id: users_id
-                        }
-                    }
-                },
-                include: {
-                    users_cagnotte: true
-                }
-            });
-
-            // Créer une transaction pour la contribution
-            await prisma.transaction.create({
-                data: {
-                    montant: parseFloat(montant),
-                    exp: users_id,
-                    type: {
-                        connectOrCreate: {
-                            where: { libelle: 'CONTRIBUTION_CAGNOTTE' },
-                            create: { libelle: 'CONTRIBUTION_CAGNOTTE' }
-                        }
-                    },
-                    users_transaction: {
-                        create: {
-                            users_id: users_id,
-                            role: 'CONTRIBUTEUR'
-                        }
                     }
                 }
             });
-
+    
             return res.status(200).json(
                 instance.formatResponse(
-                    updatedCagnotte,
+                    { transaction, updatedCagnotte },
                     "Contribution effectuée avec succès",
                     200,
                     null
@@ -156,6 +161,45 @@ class CagnotteController {
             );
         }
     }
+    
+
+    static async getAllOpenCagnottes(req, res) {
+        try {
+            // Récupérer les cagnottes avec etat = false
+            const openCagnottes = await prisma.cagnotte.findMany({
+                where: {
+                    etat: false
+                },
+                include: {
+                    users_cagnotte: {
+                        include: {
+                            users: true
+                        }
+                    }
+                }
+            });
+
+            return res.status(200).json(
+                instance.formatResponse(
+                    openCagnottes,
+                    "Cagnottes ouvertes récupérées avec succès",
+                    200,
+                    null
+                )
+            );
+        } catch (error) {
+            console.error(error);
+            return res.status(500).json(
+                instance.formatResponse(
+                    null,
+                    "Erreur lors de la récupération des cagnottes ouvertes",
+                    500,
+                    error.message
+                )
+            );
+        }
+    }
+
 
     static async getAllCagnottes(req, res) {
         try {
@@ -191,10 +235,17 @@ class CagnotteController {
     }
 
     static async getCagnotteById(req, res) {
+        const { id } = req.params; // Assurez-vous que l'ID est passé dans les paramètres de l'URL
+    
+        if (!id) {
+            return res.status(400).json({
+                message: "L'identifiant de la cagnotte est requis."
+            });
+        }
+    
         try {
-            const { id } = req.params;
             const cagnotte = await prisma.cagnotte.findUnique({
-                where: { id: parseInt(id) },
+                where: { id: parseInt(id) }, // Assurez-vous que l'ID est un entier
                 include: {
                     users_cagnotte: {
                         include: {
@@ -203,38 +254,23 @@ class CagnotteController {
                     }
                 }
             });
-
+    
             if (!cagnotte) {
-                return res.status(404).json(
-                    instance.formatResponse(
-                        null,
-                        "Cagnotte non trouvée",
-                        404,
-                        "NOT_FOUND"
-                    )
-                );
+                return res.status(404).json({
+                    message: "Cagnotte non trouvée."
+                });
             }
-
-            return res.status(200).json(
-                instance.formatResponse(
-                    cagnotte,
-                    "Cagnotte récupérée avec succès",
-                    200,
-                    null
-                )
-            );
+    
+            return res.status(200).json(cagnotte);
         } catch (error) {
             console.error(error);
-            return res.status(500).json(
-                instance.formatResponse(
-                    null,
-                    "Erreur lors de la récupération de la cagnotte",
-                    500,
-                    error.message
-                )
-            );
+            return res.status(500).json({
+                message: "Erreur lors de la récupération de la cagnotte.",
+                error: error.message
+            });
         }
     }
+    
 }
 
 export default CagnotteController;

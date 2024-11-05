@@ -18,9 +18,11 @@ model cadeaux {
 
 model cagnotte {
   id               Int              @id @default(autoincrement())
+  nom              String?
   users_id         Int?
   montant          Decimal?         @db.Decimal(10, 2)
   montant_objectif Decimal?         @db.Decimal(10, 2)
+  etat             Boolean?
   users            users?           @relation(fields: [users_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   users_cagnotte   users_cagnotte[]
 }
@@ -137,6 +139,7 @@ model users {
   transaction_transaction_destinataireTousers transaction[]            @relation("transaction_destinataireTousers")
   transaction_transaction_expTousers          transaction[]            @relation("transaction_expTousers")
   role                                        role?                    @relation(fields: [role_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  factures                                    facture[]
   users_cadeaux                               users_cadeaux[]
   users_cagnotte                              users_cagnotte[]
   users_demandes                              users_demandes[]
@@ -231,4 +234,23 @@ model bankaccount {
   dateexpiration String    @db.VarChar(6)
   users_id       Int
   users          users     @relation(fields: [users_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model facture {
+  id               Int      @id @default(autoincrement())
+  user_id          Int
+  numero_facture   String    @db.VarChar(50)
+  montant_total    Decimal   @db.Decimal(10, 2)
+  societe_id       Int
+  status           String    @default("Pending") @db.VarChar(20)
+  Date    DateTime  @default(now())
+  user             users     @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  societe          societe   @relation(fields: [societe_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+model societe {
+  id        Int      @id @default(autoincrement())
+  nom       String   @db.VarChar(100)
+  secteur   String   @db.VarChar(50) // e.g., eau, électricité, téléphonie
+  telephone String   @db.VarChar(20)
+  factures  facture[]
 }
